@@ -3,8 +3,12 @@ import "./globals.css";
 import { ConvexClientProvider } from "./providers";
 
 export const metadata: Metadata = {
-  title: "Salon Dashboard",
-  description: "Admin dashboard for hair salon management",
+  title: "Cadence",
+  description: "Salon management dashboard by Cadence",
+  icons: {
+    icon: "/icon.svg",
+    apple: "/apple-icon.svg",
+  },
 };
 
 export default function RootLayout({
