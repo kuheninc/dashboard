@@ -34,29 +34,29 @@ export default function PendingApprovals() {
         </span>
       </div>
 
-      <div className="flex gap-3 overflow-x-auto pb-1">
+      <div className="flex gap-3 overflow-x-auto pb-1 -mx-4 px-4 sm:mx-0 sm:px-0">
         {enriched.map((booking) => (
           <div
             key={booking._id}
-            className="bg-card border border-border rounded-[14px] min-w-[270px] flex-shrink-0 transition-shadow hover:shadow-[0_4px_16px_rgba(42,36,32,0.06)]"
+            className="bg-card border border-border rounded-[14px] min-w-[240px] sm:min-w-[270px] flex-shrink-0 transition-shadow hover:shadow-[0_4px_16px_rgba(42,36,32,0.06)]"
             style={{
               borderColor: "rgba(196,152,62,0.18)",
               background:
                 "linear-gradient(to bottom, rgba(196,152,62,0.03), transparent)",
             }}
           >
-            <div className="p-[18px]">
+            <div className="p-4 sm:p-[18px]">
               <div className="flex items-start justify-between mb-3">
-                <div>
-                  <p className="text-[13px] font-medium text-foreground">
+                <div className="min-w-0 flex-1 mr-2">
+                  <p className="text-[13px] font-medium text-foreground truncate">
                     {booking.customerName}
                   </p>
-                  <p className="text-[12px] text-muted-foreground mt-0.5">
+                  <p className="text-[12px] text-muted-foreground mt-0.5 truncate">
                     {booking.serviceName}
                   </p>
                 </div>
                 <div
-                  className="p-1.5 rounded-lg"
+                  className="p-1.5 rounded-lg flex-shrink-0"
                   style={{ backgroundColor: "rgba(196,152,62,0.08)" }}
                 >
                   <Clock className="w-3.5 h-3.5" style={{ color: "#c4983e" }} />

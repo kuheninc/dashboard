@@ -17,10 +17,10 @@ export default function DashboardShell({
       <div className="flex min-h-screen relative z-[1]">
         <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-        <div className="flex-1 flex flex-col min-h-screen overflow-hidden">
+        <div className="flex-1 flex flex-col min-h-screen min-w-0">
           <Header onMenuClick={() => setSidebarOpen(true)} />
 
-          <main className="flex-1 overflow-y-auto px-10 pb-10">
+          <main className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-10 pb-6 lg:pb-10">
             {children}
           </main>
         </div>

@@ -98,13 +98,14 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
 
       <aside
         className={cn(
-          "fixed top-0 left-0 z-50 h-full w-[260px] flex flex-col transition-transform duration-200 lg:translate-x-0 lg:static lg:z-auto flex-shrink-0",
+          "fixed top-0 left-0 z-50 h-screen w-[260px] flex flex-col transition-transform duration-200",
+          "lg:sticky lg:top-0 lg:z-auto lg:translate-x-0 lg:flex-shrink-0",
           open ? "translate-x-0" : "-translate-x-full"
         )}
         style={{ background: "#1c1720" }}
       >
         {/* Brand */}
-        <div className="flex items-center justify-between px-5 pt-7 pb-8">
+        <div className="flex items-center justify-between px-5 pt-7 pb-8 flex-shrink-0">
           <Link href="/dashboard" className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-[10px] bg-gradient-to-br from-[#d1b799] to-[#a68b6b] flex items-center justify-center flex-shrink-0">
               <CadenceIcon className="w-[20px] h-[14px] text-[#1c1720]" />
@@ -135,7 +136,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
         </nav>
 
         {/* WhatsApp Bot Status */}
-        <div className="px-4 pt-4 border-t border-[rgba(255,255,255,0.06)]">
+        <div className="px-4 pt-4 border-t border-[rgba(255,255,255,0.06)] flex-shrink-0">
           <div className="flex items-center gap-3 px-3 py-2.5 rounded-[10px] bg-[rgba(209,183,153,0.06)]">
             <div className="relative flex-shrink-0">
               <MessageCircle className="w-[18px] h-[18px] text-[rgba(242,235,224,0.55)]" />
@@ -153,7 +154,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
         </div>
 
         {/* Footer */}
-        <div className="flex items-center gap-3 px-7 py-5 mt-2 border-t border-[rgba(255,255,255,0.06)]">
+        <div className="flex items-center gap-3 px-7 py-5 mt-2 border-t border-[rgba(255,255,255,0.06)] flex-shrink-0">
           <div className="w-8 h-8 rounded-[8px] bg-gradient-to-br from-[#a68b6b] to-[#8a7055] flex items-center justify-center text-[12px] font-semibold text-[#f2ebe0] flex-shrink-0">
             {initials}
           </div>

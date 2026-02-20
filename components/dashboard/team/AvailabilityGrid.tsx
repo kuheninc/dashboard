@@ -24,16 +24,16 @@ interface AvailabilityGridProps {
 export default function AvailabilityGrid({ stylists }: AvailabilityGridProps) {
   return (
     <div className="bg-card border border-border rounded-[14px]">
-      <div className="px-[22px] py-[18px] border-b border-border">
+      <div className="px-4 lg:px-[22px] py-[18px] border-b border-border">
         <h3 className="font-display text-[17px] text-foreground">Weekly Availability</h3>
         <p className="text-[13px] text-muted-foreground mt-0.5">All stylists&apos; working hours</p>
       </div>
 
-      <div className="px-[22px] py-[18px]">
-        <div className="overflow-x-auto">
-          <div className="min-w-[600px]">
+      <div className="px-4 lg:px-[22px] py-[18px]">
+        <div className="overflow-x-auto -mx-4 px-4 lg:mx-0 lg:px-0">
+          <div className="min-w-[500px]">
             {/* Day headers */}
-            <div className="grid grid-cols-8 gap-1.5 mb-2">
+            <div className="grid grid-cols-8 gap-1 lg:gap-1.5 mb-2">
               <div />
               {days.map((d) => (
                 <div key={d} className="text-center text-[11px] font-medium text-[#9c9184]">
@@ -44,27 +44,27 @@ export default function AvailabilityGrid({ stylists }: AvailabilityGridProps) {
 
             {/* Stylist rows */}
             {stylists.map((stylist, i) => (
-              <div key={stylist._id} className="grid grid-cols-8 gap-1.5 mb-1.5">
+              <div key={stylist._id} className="grid grid-cols-8 gap-1 lg:gap-1.5 mb-1.5">
                 <div className="text-[12px] font-medium text-foreground flex items-center truncate pr-1">
                   {stylist.name}
                 </div>
                 {days.map((_, dayIndex) => {
                   const avail = stylist.availability.find((a) => a.day === dayIndex);
                   return (
-                    <div key={dayIndex} className="h-10 relative">
+                    <div key={dayIndex} className="h-9 lg:h-10 relative">
                       {avail ? (
                         <div
                           className={cn(
-                            "h-full rounded-[8px] flex items-center justify-center",
+                            "h-full rounded-[6px] lg:rounded-[8px] flex items-center justify-center",
                             COLORS[i % COLORS.length]
                           )}
                         >
-                          <span className="text-[10px] font-medium text-foreground/70">
+                          <span className="text-[9px] lg:text-[10px] font-medium text-foreground/70">
                             {avail.startTime}-{avail.endTime}
                           </span>
                         </div>
                       ) : (
-                        <div className="h-full rounded-[8px] border border-dashed border-border" />
+                        <div className="h-full rounded-[6px] lg:rounded-[8px] border border-dashed border-border" />
                       )}
                     </div>
                   );

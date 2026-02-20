@@ -113,7 +113,7 @@ export default function DashboardOverview() {
       <PendingApprovals />
 
       {/* Content grid: charts + right column */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-5">
+      <div className="grid grid-cols-1 xl:grid-cols-[1fr_340px] gap-5">
         {/* Left: charts */}
         <div className="space-y-5 cadence-animate cadence-delay-5">
           <BookingTrendChart data={stats?.trendData ?? []} />
