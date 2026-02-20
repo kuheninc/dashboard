@@ -17,7 +17,6 @@ export default function TeamPage() {
 
   const activeStylists = stylists.filter((s) => s.isActive);
 
-  // Compute per-stylist stats from bookings
   const stylistStats = useMemo(() => {
     if (!bookings) return new Map<string, { bookings: number; completed: number; noShows: number }>();
     const map = new Map<string, { bookings: number; completed: number; noShows: number }>();
@@ -41,39 +40,23 @@ export default function TeamPage() {
     : 0;
 
   return (
-    <div className="space-y-6 max-w-[1400px]">
-      <div>
-        <h1 className="text-xl font-bold text-foreground">Team</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">
-          View stylist profiles, performance, and availability.
-        </p>
-      </div>
-
+    <div className="space-y-7 max-w-[1400px]">
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <StatCard
-          label="Active Stylists"
-          value={String(activeStylists.length)}
-          icon={UserCog}
-          iconColor="text-primary"
-        />
-        <StatCard
-          label="Avg. Completion Rate"
-          value={bookings ? `${avgCompletionRate}%` : "—"}
-          icon={CheckCircle2}
-          iconColor="text-emerald-600"
-        />
-        <StatCard
-          label="Total Bookings (Month)"
-          value={bookings ? String(totalBookingsMonth) : "—"}
-          icon={Calendar}
-          iconColor="text-violet-600"
-        />
+        <div className="cadence-animate cadence-delay-1">
+          <StatCard label="Active Stylists" value={String(activeStylists.length)} icon={UserCog} iconColor="text-primary" />
+        </div>
+        <div className="cadence-animate cadence-delay-2">
+          <StatCard label="Avg. Completion Rate" value={bookings ? `${avgCompletionRate}%` : "\u2014"} icon={CheckCircle2} iconColor="text-[#5a9a6e]" />
+        </div>
+        <div className="cadence-animate cadence-delay-3">
+          <StatCard label="Total Bookings (Month)" value={bookings ? String(totalBookingsMonth) : "\u2014"} icon={Calendar} iconColor="text-[#8a7055]" />
+        </div>
       </div>
 
       {/* Stylist cards */}
-      <div>
-        <h2 className="text-sm font-semibold text-foreground mb-3">Stylists</h2>
+      <div className="cadence-animate cadence-delay-4">
+        <h2 className="font-display text-[17px] text-foreground mb-4">Stylists</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {stylists.map((stylist) => (
             <StylistCard
@@ -86,7 +69,9 @@ export default function TeamPage() {
       </div>
 
       {/* Availability grid */}
-      <AvailabilityGrid stylists={stylists} />
+      <div className="cadence-animate cadence-delay-5">
+        <AvailabilityGrid stylists={stylists} />
+      </div>
     </div>
   );
 }

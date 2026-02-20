@@ -1,7 +1,3 @@
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Phone, Calendar, CheckCircle2 } from "lucide-react";
 import type { Doc } from "@/convex/_generated/dataModel";
 
 interface StylistCardProps {
@@ -16,32 +12,43 @@ export default function StylistCard({ stylist, stats }: StylistCardProps) {
       : 0;
 
   return (
-    <Card className="shadow-sm border-border/60 hover:shadow-md transition-shadow">
-      <CardContent className="p-5">
+    <div className="bg-card border border-border rounded-[14px] hover:shadow-[0_4px_16px_rgba(42,36,32,0.06)] transition-shadow">
+      <div className="px-[22px] py-[18px]">
         <div className="flex items-start gap-3 mb-4">
-          <Avatar className="h-10 w-10">
-            <AvatarFallback className="bg-primary/10 text-primary text-sm font-semibold">
-              {stylist.name.slice(0, 2).toUpperCase()}
-            </AvatarFallback>
-          </Avatar>
-          <div className="flex-1">
+          {/* Avatar */}
+          <div className="w-10 h-10 rounded-[10px] bg-gradient-to-br from-[#a68b6b] to-[#8a7055] flex items-center justify-center text-[14px] font-semibold text-white shrink-0">
+            {stylist.name.slice(0, 2).toUpperCase()}
+          </div>
+
+          <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-foreground">{stylist.name}</h3>
-              <Badge
-                variant="outline"
-                className={`text-[11px] ${
+              <h3 className="font-display text-[17px] text-foreground truncate">{stylist.name}</h3>
+              <span
+                className={`text-[11px] font-medium px-2.5 py-1 rounded-full shrink-0 ml-3 ${
                   stylist.isActive
-                    ? "bg-emerald-100 text-emerald-700 border-emerald-200"
-                    : "bg-gray-100 text-gray-500 border-gray-200"
+                    ? "bg-[rgba(90,154,110,0.08)] text-[#5a9a6e]"
+                    : "bg-[rgba(42,36,32,0.05)] text-[#9c9184]"
                 }`}
               >
                 {stylist.isActive ? "Active" : "Inactive"}
-              </Badge>
+              </span>
             </div>
             {stylist.phone && (
-              <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1">
-                <Phone className="w-3 h-3" />
-                <span className="font-mono">+{stylist.phone}</span>
+              <div className="flex items-center gap-1.5 mt-1">
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="text-[#9c9184]"
+                >
+                  <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+                </svg>
+                <span className="text-[12px] text-[#9c9184] font-mono">+{stylist.phone}</span>
               </div>
             )}
           </div>
@@ -49,26 +56,20 @@ export default function StylistCard({ stylist, stats }: StylistCardProps) {
 
         {/* Performance stats */}
         <div className="grid grid-cols-3 gap-2">
-          <div className="p-2 rounded-lg bg-muted/30 text-center">
-            <div className="flex items-center justify-center gap-1">
-              <Calendar className="w-3 h-3 text-primary" />
-              <span className="text-sm font-bold text-foreground">{stats?.bookings ?? 0}</span>
-            </div>
+          <div className="p-2.5 rounded-[10px] bg-[rgba(166,139,107,0.05)] text-center">
+            <div className="font-display text-[14px] text-foreground">{stats?.bookings ?? 0}</div>
             <p className="text-[10px] text-muted-foreground mt-0.5">Bookings</p>
           </div>
-          <div className="p-2 rounded-lg bg-muted/30 text-center">
-            <div className="flex items-center justify-center gap-1">
-              <CheckCircle2 className="w-3 h-3 text-emerald-500" />
-              <span className="text-sm font-bold text-foreground">{completionRate}%</span>
-            </div>
+          <div className="p-2.5 rounded-[10px] bg-[rgba(166,139,107,0.05)] text-center">
+            <div className="font-display text-[14px] text-foreground">{completionRate}%</div>
             <p className="text-[10px] text-muted-foreground mt-0.5">Completed</p>
           </div>
-          <div className="p-2 rounded-lg bg-muted/30 text-center">
-            <span className="text-sm font-bold text-foreground">{stylist.availability.length}</span>
+          <div className="p-2.5 rounded-[10px] bg-[rgba(166,139,107,0.05)] text-center">
+            <div className="font-display text-[14px] text-foreground">{stylist.availability.length}</div>
             <p className="text-[10px] text-muted-foreground mt-0.5">Days/wk</p>
           </div>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

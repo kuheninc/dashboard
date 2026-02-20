@@ -1,6 +1,5 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { format, parseISO } from "date-fns";
 
@@ -15,42 +14,43 @@ export default function BookingTrendChart({ data: rawData }: BookingTrendChartPr
   }));
 
   return (
-    <Card className="shadow-sm border-border/60">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-semibold">Booking Trends</CardTitle>
-        <p className="text-xs text-muted-foreground">Daily bookings over the last 30 days</p>
-      </CardHeader>
-      <CardContent className="pt-2">
+    <div className="bg-card border border-border rounded-[14px]">
+      <div className="px-[22px] py-[18px] border-b border-border">
+        <h3 className="font-display text-[17px] text-foreground">Booking Trends</h3>
+        <p className="text-xs text-muted-foreground mt-0.5">Daily bookings over the last 30 days</p>
+      </div>
+      <div className="px-[22px] py-[18px]">
         <div className="h-[260px]">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={data} margin={{ top: 5, right: 5, bottom: 0, left: -20 }}>
               <defs>
                 <linearGradient id="bookingGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="hsl(220, 100%, 50%)" stopOpacity={0.2} />
-                  <stop offset="100%" stopColor="hsl(220, 100%, 50%)" stopOpacity={0} />
+                  <stop offset="0%" stopColor="rgba(166,139,107,0.2)" stopOpacity={1} />
+                  <stop offset="100%" stopColor="rgba(166,139,107,0)" stopOpacity={1} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 13%, 91%)" vertical={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(42,36,32,0.06)" vertical={false} />
               <XAxis
                 dataKey="label"
-                tick={{ fontSize: 11, fill: "hsl(220, 9%, 46%)" }}
+                tick={{ fontSize: 11, fill: "#9c9184" }}
                 tickLine={false}
                 axisLine={false}
                 interval={4}
               />
               <YAxis
-                tick={{ fontSize: 11, fill: "hsl(220, 9%, 46%)" }}
+                tick={{ fontSize: 11, fill: "#9c9184" }}
                 tickLine={false}
                 axisLine={false}
                 allowDecimals={false}
               />
               <Tooltip
                 contentStyle={{
-                  backgroundColor: "white",
-                  border: "1px solid hsl(220, 13%, 91%)",
-                  borderRadius: "8px",
+                  backgroundColor: "#faf7f2",
+                  border: "1px solid rgba(42,36,32,0.08)",
+                  borderRadius: "10px",
                   fontSize: "12px",
-                  boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+                  boxShadow: "0 4px 16px rgba(42,36,32,0.06)",
+                  fontFamily: "'General Sans', sans-serif",
                 }}
                 labelStyle={{ fontWeight: 600, marginBottom: 4 }}
               />
@@ -58,14 +58,14 @@ export default function BookingTrendChart({ data: rawData }: BookingTrendChartPr
                 type="monotone"
                 dataKey="value"
                 name="Bookings"
-                stroke="hsl(220, 100%, 50%)"
+                stroke="#a68b6b"
                 strokeWidth={2}
                 fill="url(#bookingGradient)"
               />
             </AreaChart>
           </ResponsiveContainer>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

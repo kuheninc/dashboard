@@ -1,6 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CalendarPlus, XCircle, AlertTriangle, CheckCircle2 } from "lucide-react";
-import { cn } from "@/lib/utils";
 import type { EnrichedBooking } from "@/lib/dashboard-helpers";
 
 type ActivityType = "booking" | "cancellation" | "no_show" | "completed";
@@ -13,10 +11,26 @@ interface ActivityItem {
 }
 
 const typeConfig = {
-  booking: { icon: CalendarPlus, color: "text-blue-500", bg: "bg-blue-50" },
-  cancellation: { icon: XCircle, color: "text-gray-500", bg: "bg-gray-50" },
-  no_show: { icon: AlertTriangle, color: "text-red-500", bg: "bg-red-50" },
-  completed: { icon: CheckCircle2, color: "text-emerald-500", bg: "bg-emerald-50" },
+  booking: {
+    icon: CalendarPlus,
+    color: "#c4983e",
+    bg: "rgba(196,152,62,0.08)",
+  },
+  cancellation: {
+    icon: XCircle,
+    color: "#9c9184",
+    bg: "rgba(166,139,107,0.05)",
+  },
+  no_show: {
+    icon: AlertTriangle,
+    color: "#c45a5a",
+    bg: "rgba(196,90,90,0.08)",
+  },
+  completed: {
+    icon: CheckCircle2,
+    color: "#5a9a6e",
+    bg: "rgba(90,154,110,0.08)",
+  },
 };
 
 function deriveActivities(bookings: EnrichedBooking[]): ActivityItem[] {
@@ -72,25 +86,43 @@ export default function ActivityFeed({ bookings }: ActivityFeedProps) {
     .slice(0, 8);
 
   return (
-    <Card className="shadow-sm border-border/60">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-sm font-semibold">Recent Activity</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3">
+    <div className="bg-card border border-border rounded-[14px] transition-shadow hover:shadow-[0_4px_16px_rgba(42,36,32,0.06)]">
+      <div className="px-[22px] py-[18px] border-b border-border flex items-center justify-between">
+        <h3 className="font-display text-[17px] text-foreground">
+          Recent Activity
+        </h3>
+        {activities.length > 0 && (
+          <span className="text-[12px] text-primary font-medium hover:text-[#8a7055] cursor-default">
+            {activities.length} events
+          </span>
+        )}
+      </div>
+
+      <div className="px-[22px] py-[18px] space-y-4">
         {activities.length === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-4">No recent activity</p>
+          <p className="text-[13px] text-muted-foreground text-center py-6">
+            No recent activity
+          </p>
         ) : (
           activities.map((activity) => {
             const config = typeConfig[activity.type];
             const Icon = config.icon;
             return (
               <div key={activity.id} className="flex items-start gap-3">
-                <div className={cn("p-1.5 rounded-lg mt-0.5", config.bg)}>
-                  <Icon className={cn("w-3.5 h-3.5", config.color)} />
+                <div
+                  className="p-1.5 rounded-lg mt-0.5 flex-shrink-0"
+                  style={{ backgroundColor: config.bg }}
+                >
+                  <Icon
+                    className="w-3.5 h-3.5"
+                    style={{ color: config.color }}
+                  />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-foreground leading-snug">{activity.message}</p>
-                  <p className="text-[11px] text-muted-foreground mt-0.5">
+                  <p className="text-[13px] text-foreground leading-snug">
+                    {activity.message}
+                  </p>
+                  <p className="text-[11px] text-[#9c9184] mt-0.5">
                     {formatTimestamp(activity.timestamp)}
                   </p>
                 </div>
@@ -98,7 +130,7 @@ export default function ActivityFeed({ bookings }: ActivityFeedProps) {
             );
           })
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

@@ -14,7 +14,7 @@ import PendingApprovals from "@/components/dashboard/bookings/PendingApprovals";
 import { CalendarDays, DollarSign, UserPlus, AlertTriangle } from "lucide-react";
 
 export default function DashboardOverview() {
-  const { salonId, salon, services, stylists, customers } = useDashboard();
+  const { salonId, services, stylists, customers } = useDashboard();
   const today = getTodayDateStr();
   const { startDate, endDate } = useMemo(() => getDateRangeStr(30), []);
 
@@ -30,11 +30,9 @@ export default function DashboardOverview() {
     const noShows = enrichedMonth.filter((b) => b.status === "no_show").length;
     const noShowRate = enrichedMonth.length > 0 ? ((noShows / enrichedMonth.length) * 100).toFixed(1) : "0";
 
-    // New customers: those created in the last 30 days
     const startMs = new Date(startDate + "T00:00:00").getTime();
     const newCustomers = customers.filter((c) => c._creationTime >= startMs).length;
 
-    // Booking trend: group by date for last 30 days
     const dateCountMap = new Map<string, number>();
     for (const b of monthBookings) {
       dateCountMap.set(b.date, (dateCountMap.get(b.date) ?? 0) + 1);
@@ -48,7 +46,6 @@ export default function DashboardOverview() {
       d.setDate(d.getDate() + 1);
     }
 
-    // Service popularity: count bookings per service this month
     const serviceCountMap = new Map<string, number>();
     for (const b of enrichedMonth) {
       serviceCountMap.set(b.serviceName, (serviceCountMap.get(b.serviceName) ?? 0) + 1);
@@ -58,7 +55,6 @@ export default function DashboardOverview() {
       .sort((a, b) => b.bookings - a.bookings)
       .slice(0, 5);
 
-    // Recent bookings for activity feed (last 7 days)
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
     const sevenDaysStr = sevenDaysAgo.toISOString().split("T")[0];
@@ -76,59 +72,59 @@ export default function DashboardOverview() {
   }, [monthBookings, todayBookings, customers, services, stylists, startDate, endDate]);
 
   return (
-    <div className="space-y-6 max-w-[1400px]">
-      <div>
-        <h1 className="text-xl font-bold text-foreground">Dashboard</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">
-          Welcome back. Here&apos;s what&apos;s happening at {salon.name} today.
-        </p>
-      </div>
-
-      {/* Stat cards */}
+    <div className="space-y-7 max-w-[1400px]">
+      {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          label="Today's Bookings"
-          value={stats ? String(stats.todayCount) : "—"}
-          icon={CalendarDays}
-          iconColor="text-primary"
-        />
-        <StatCard
-          label="Revenue (This Month)"
-          value={stats ? `RM ${stats.revenue.toLocaleString()}` : "—"}
-          icon={DollarSign}
-          iconColor="text-emerald-600"
-        />
-        <StatCard
-          label="New Customers"
-          value={stats ? String(stats.newCustomers) : "—"}
-          icon={UserPlus}
-          iconColor="text-violet-600"
-        />
-        <StatCard
-          label="No-Show Rate"
-          value={stats ? `${stats.noShowRate}%` : "—"}
-          icon={AlertTriangle}
-          iconColor="text-amber-600"
-        />
+        <div className="cadence-animate cadence-delay-1">
+          <StatCard
+            label="Today's Bookings"
+            value={stats ? String(stats.todayCount) : "\u2014"}
+            icon={CalendarDays}
+            iconColor="text-primary"
+          />
+        </div>
+        <div className="cadence-animate cadence-delay-2">
+          <StatCard
+            label="Revenue (This Month)"
+            value={stats ? `RM ${stats.revenue.toLocaleString()}` : "\u2014"}
+            icon={DollarSign}
+            iconColor="text-[#5a9a6e]"
+          />
+        </div>
+        <div className="cadence-animate cadence-delay-3">
+          <StatCard
+            label="New Customers"
+            value={stats ? String(stats.newCustomers) : "\u2014"}
+            icon={UserPlus}
+            iconColor="text-[#8a7055]"
+          />
+        </div>
+        <div className="cadence-animate cadence-delay-4">
+          <StatCard
+            label="No-Show Rate"
+            value={stats ? `${stats.noShowRate}%` : "\u2014"}
+            icon={AlertTriangle}
+            iconColor="text-[#c4983e]"
+          />
+        </div>
       </div>
 
       {/* Pending approvals */}
       <PendingApprovals />
 
-      {/* Charts row */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
-        <div className="lg:col-span-3">
+      {/* Content grid: charts + right column */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-5">
+        {/* Left: charts */}
+        <div className="space-y-5 cadence-animate cadence-delay-5">
           <BookingTrendChart data={stats?.trendData ?? []} />
-        </div>
-        <div className="lg:col-span-2">
           <ServicePopularityChart data={stats?.popularityData ?? []} />
         </div>
-      </div>
 
-      {/* Schedule + Activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <TodaySchedule />
-        <ActivityFeed bookings={stats?.recentBookings ?? []} />
+        {/* Right column */}
+        <div className="space-y-5 cadence-animate cadence-delay-6">
+          <TodaySchedule />
+          <ActivityFeed bookings={stats?.recentBookings ?? []} />
+        </div>
       </div>
     </div>
   );

@@ -1,15 +1,8 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 
-const COLORS = [
-  "hsl(220, 100%, 50%)",
-  "hsl(220, 80%, 60%)",
-  "hsl(220, 60%, 68%)",
-  "hsl(220, 40%, 75%)",
-  "hsl(220, 25%, 82%)",
-];
+const COLORS = ["#a68b6b", "#c4a67e", "#8a7055", "#d1b799", "#6b6058"];
 
 interface ServicePopularityChartProps {
   data: { name: string; bookings: number }[];
@@ -17,12 +10,12 @@ interface ServicePopularityChartProps {
 
 export default function ServicePopularityChart({ data }: ServicePopularityChartProps) {
   return (
-    <Card className="shadow-sm border-border/60">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-semibold">Top Services</CardTitle>
-        <p className="text-xs text-muted-foreground">By booking count this month</p>
-      </CardHeader>
-      <CardContent className="pt-2">
+    <div className="bg-card border border-border rounded-[14px]">
+      <div className="px-[22px] py-[18px] border-b border-border">
+        <h3 className="font-display text-[17px] text-foreground">Top Services</h3>
+        <p className="text-xs text-muted-foreground mt-0.5">By booking count this month</p>
+      </div>
+      <div className="px-[22px] py-[18px]">
         <div className="h-[260px]">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
@@ -32,25 +25,26 @@ export default function ServicePopularityChart({ data }: ServicePopularityChartP
             >
               <XAxis
                 type="number"
-                tick={{ fontSize: 11, fill: "hsl(220, 9%, 46%)" }}
+                tick={{ fontSize: 11, fill: "#9c9184" }}
                 tickLine={false}
                 axisLine={false}
               />
               <YAxis
                 type="category"
                 dataKey="name"
-                tick={{ fontSize: 12, fill: "hsl(220, 9%, 46%)" }}
+                tick={{ fontSize: 12, fill: "#9c9184" }}
                 tickLine={false}
                 axisLine={false}
                 width={90}
               />
               <Tooltip
                 contentStyle={{
-                  backgroundColor: "white",
-                  border: "1px solid hsl(220, 13%, 91%)",
-                  borderRadius: "8px",
+                  backgroundColor: "#faf7f2",
+                  border: "1px solid rgba(42,36,32,0.08)",
+                  borderRadius: "10px",
                   fontSize: "12px",
-                  boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+                  boxShadow: "0 4px 16px rgba(42,36,32,0.06)",
+                  fontFamily: "'General Sans', sans-serif",
                 }}
               />
               <Bar dataKey="bookings" radius={[0, 6, 6, 0]} barSize={22}>
@@ -61,7 +55,7 @@ export default function ServicePopularityChart({ data }: ServicePopularityChartP
             </BarChart>
           </ResponsiveContainer>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

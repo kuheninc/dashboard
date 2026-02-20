@@ -1,18 +1,24 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
-
 const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const hours = Array.from({ length: 12 }, (_, i) => i + 9); // 9 AM to 8 PM
 
-function getIntensity(count: number): string {
-  if (count === 0) return "bg-muted/30";
-  if (count <= 1) return "bg-blue-100";
-  if (count <= 2) return "bg-blue-200";
-  if (count <= 3) return "bg-blue-300";
-  if (count <= 4) return "bg-blue-400";
-  return "bg-blue-500";
+const INTENSITY_COLORS = [
+  "rgba(166,139,107,0.04)",
+  "rgba(166,139,107,0.15)",
+  "rgba(166,139,107,0.30)",
+  "rgba(166,139,107,0.50)",
+  "rgba(166,139,107,0.70)",
+  "rgba(166,139,107,1)",
+];
+
+function getIntensityColor(count: number): string {
+  if (count === 0) return INTENSITY_COLORS[0];
+  if (count <= 1) return INTENSITY_COLORS[1];
+  if (count <= 2) return INTENSITY_COLORS[2];
+  if (count <= 3) return INTENSITY_COLORS[3];
+  if (count <= 4) return INTENSITY_COLORS[4];
+  return INTENSITY_COLORS[5];
 }
 
 interface PeakHoursHeatmapProps {
@@ -21,19 +27,19 @@ interface PeakHoursHeatmapProps {
 
 export default function PeakHoursHeatmap({ data }: PeakHoursHeatmapProps) {
   return (
-    <Card className="shadow-sm border-border/60">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-semibold">Peak Hours</CardTitle>
-        <p className="text-xs text-muted-foreground">Booking density by day and hour</p>
-      </CardHeader>
-      <CardContent className="pt-2">
+    <div className="bg-card border border-border rounded-[14px]">
+      <div className="px-[22px] py-[18px] border-b border-border">
+        <h3 className="font-display text-[17px] text-foreground">Peak Hours</h3>
+        <p className="text-xs text-muted-foreground mt-0.5">Booking density by day and hour</p>
+      </div>
+      <div className="px-[22px] py-[18px]">
         <div className="overflow-x-auto">
           <div className="min-w-[500px]">
             {/* Hour labels */}
             <div className="flex mb-1">
               <div className="w-10" />
               {hours.map((hour) => (
-                <div key={hour} className="flex-1 text-center text-[10px] text-muted-foreground">
+                <div key={hour} className="flex-1 text-center text-[10px]" style={{ color: "#9c9184" }}>
                   {hour > 12 ? `${hour - 12}p` : hour === 12 ? "12p" : `${hour}a`}
                 </div>
               ))}
@@ -42,7 +48,7 @@ export default function PeakHoursHeatmap({ data }: PeakHoursHeatmapProps) {
             {/* Grid */}
             {days.map((day, dayIndex) => (
               <div key={day} className="flex items-center mb-1">
-                <div className="w-10 text-[11px] text-muted-foreground font-medium">{day}</div>
+                <div className="w-10 text-[11px] font-medium" style={{ color: "#9c9184" }}>{day}</div>
                 <div className="flex-1 flex gap-0.5">
                   {hours.map((hour) => {
                     const cell = data.find(
@@ -51,10 +57,8 @@ export default function PeakHoursHeatmap({ data }: PeakHoursHeatmapProps) {
                     return (
                       <div
                         key={hour}
-                        className={cn(
-                          "flex-1 h-7 rounded-sm transition-colors",
-                          getIntensity(cell?.count ?? 0)
-                        )}
+                        className="flex-1 h-7 rounded-sm transition-colors"
+                        style={{ backgroundColor: getIntensityColor(cell?.count ?? 0) }}
                         title={`${day} ${hour}:00 — ${cell?.count ?? 0} bookings`}
                       />
                     );
@@ -65,17 +69,19 @@ export default function PeakHoursHeatmap({ data }: PeakHoursHeatmapProps) {
 
             {/* Legend */}
             <div className="flex items-center justify-end gap-1 mt-3">
-              <span className="text-[10px] text-muted-foreground mr-1">Less</span>
-              {["bg-muted/30", "bg-blue-100", "bg-blue-200", "bg-blue-300", "bg-blue-400", "bg-blue-500"].map(
-                (cls) => (
-                  <div key={cls} className={cn("w-4 h-4 rounded-sm", cls)} />
-                )
-              )}
-              <span className="text-[10px] text-muted-foreground ml-1">More</span>
+              <span className="text-[10px] mr-1" style={{ color: "#9c9184" }}>Less</span>
+              {INTENSITY_COLORS.map((color) => (
+                <div
+                  key={color}
+                  className="w-4 h-4 rounded-sm"
+                  style={{ backgroundColor: color }}
+                />
+              ))}
+              <span className="text-[10px] ml-1" style={{ color: "#9c9184" }}>More</span>
             </div>
           </div>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

@@ -1,11 +1,10 @@
 "use client";
 
-import { useMemo } from "react";
+import { useState, useMemo } from "react";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useDashboard } from "@/lib/dashboard-context";
 import { enrichBookings, getDateRangeStr } from "@/lib/dashboard-helpers";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import StatCard from "@/components/dashboard/StatCard";
 import RevenueChart from "@/components/dashboard/charts/RevenueChart";
 import ServicePopularityChart from "@/components/dashboard/charts/ServicePopularityChart";
@@ -16,9 +15,12 @@ import CustomerRetentionChart from "@/components/dashboard/charts/CustomerRetent
 import BookingTrendChart from "@/components/dashboard/charts/BookingTrendChart";
 import { DollarSign, TrendingUp, BarChart3, Users } from "lucide-react";
 
+type Tab = "revenue" | "bookings" | "customers";
+
 export default function AnalyticsPage() {
   const { salonId, services, stylists, customers } = useDashboard();
   const { startDate, endDate } = useMemo(() => getDateRangeStr(90), []);
+  const [tab, setTab] = useState<Tab>("revenue");
 
   const bookings = useQuery(api.bookings.queries.getByDateRange, { salonId, startDate, endDate });
 
@@ -36,7 +38,6 @@ export default function AnalyticsPage() {
       ? Math.round((completed.length / nonCancelled.length) * 100)
       : 0;
 
-    // Returning customers: customers with more than 1 booking in this period
     const customerBookingCount = new Map<string, number>();
     for (const b of enriched) {
       customerBookingCount.set(b.customerId, (customerBookingCount.get(b.customerId) ?? 0) + 1);
@@ -45,7 +46,6 @@ export default function AnalyticsPage() {
     const returning = Array.from(customerBookingCount.values()).filter((c) => c > 1).length;
     const returningPct = totalWithBookings > 0 ? Math.round((returning / totalWithBookings) * 100) : 0;
 
-    // Revenue chart: daily revenue over 90 days
     const revByDate = new Map<string, number>();
     for (const b of completed) {
       revByDate.set(b.date, (revByDate.get(b.date) ?? 0) + b.servicePrice);
@@ -59,7 +59,6 @@ export default function AnalyticsPage() {
       d.setDate(d.getDate() + 1);
     }
 
-    // Booking trend: daily bookings over 90 days
     const countByDate = new Map<string, number>();
     for (const b of enriched) {
       countByDate.set(b.date, (countByDate.get(b.date) ?? 0) + 1);
@@ -72,7 +71,6 @@ export default function AnalyticsPage() {
       d2.setDate(d2.getDate() + 1);
     }
 
-    // Service popularity
     const serviceCountMap = new Map<string, number>();
     for (const b of enriched) {
       serviceCountMap.set(b.serviceName, (serviceCountMap.get(b.serviceName) ?? 0) + 1);
@@ -82,7 +80,6 @@ export default function AnalyticsPage() {
       .sort((a, b) => b.bookings - a.bookings)
       .slice(0, 5);
 
-    // Stylist performance
     const stylistMap = new Map<string, { bookings: number; completed: number; noShows: number }>();
     for (const b of enriched) {
       const key = b.stylistName;
@@ -97,8 +94,6 @@ export default function AnalyticsPage() {
       ...s,
     }));
 
-    // Booking funnel
-    const pending = enriched.filter((b) => b.status === "pending_approval").length;
     const confirmed = enriched.filter(
       (b) => ["confirmed", "reminder_sent", "customer_confirmed"].includes(b.status)
     ).length;
@@ -109,7 +104,6 @@ export default function AnalyticsPage() {
       { stage: "Completed", count: completedCount },
     ];
 
-    // Peak hours heatmap
     const peakMap = new Map<string, number>();
     for (const b of enriched) {
       const dateObj = new Date(b.date + "T00:00:00");
@@ -125,8 +119,6 @@ export default function AnalyticsPage() {
       }
     }
 
-    // Customer retention (new vs returning)
-    const newCount = totalWithBookings - returning;
     const retentionData = [
       { name: "Returning", value: returningPct },
       { name: "New", value: 100 - returningPct },
@@ -148,75 +140,93 @@ export default function AnalyticsPage() {
   }, [bookings, customers, services, stylists, startDate, endDate]);
 
   return (
-    <div className="space-y-6 max-w-[1400px]">
-      <div>
-        <h1 className="text-xl font-bold text-foreground">Analytics</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">
-          Insights on revenue, bookings, and customer behavior.
-        </p>
-      </div>
-
-      {/* Quick stats */}
+    <div className="space-y-7 max-w-[1400px]">
+      {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          label="Monthly Revenue"
-          value={data ? `RM ${data.revenue.toLocaleString()}` : "—"}
-          icon={DollarSign}
-          iconColor="text-emerald-600"
-        />
-        <StatCard
-          label="Avg. Booking Value"
-          value={data ? `RM ${data.avgValue}` : "—"}
-          icon={TrendingUp}
-          iconColor="text-primary"
-        />
-        <StatCard
-          label="Completion Rate"
-          value={data ? `${data.completionRate}%` : "—"}
-          icon={BarChart3}
-          iconColor="text-violet-600"
-        />
-        <StatCard
-          label="Returning Customers"
-          value={data ? `${data.returningPct}%` : "—"}
-          icon={Users}
-          iconColor="text-amber-600"
-        />
+        <div className="cadence-animate cadence-delay-1">
+          <StatCard
+            label="Monthly Revenue"
+            value={data ? `RM ${data.revenue.toLocaleString()}` : "\u2014"}
+            icon={DollarSign}
+            iconColor="text-[#5a9a6e]"
+          />
+        </div>
+        <div className="cadence-animate cadence-delay-2">
+          <StatCard
+            label="Avg. Booking Value"
+            value={data ? `RM ${data.avgValue}` : "\u2014"}
+            icon={TrendingUp}
+            iconColor="text-primary"
+          />
+        </div>
+        <div className="cadence-animate cadence-delay-3">
+          <StatCard
+            label="Completion Rate"
+            value={data ? `${data.completionRate}%` : "\u2014"}
+            icon={BarChart3}
+            iconColor="text-[#8a7055]"
+          />
+        </div>
+        <div className="cadence-animate cadence-delay-4">
+          <StatCard
+            label="Returning Customers"
+            value={data ? `${data.returningPct}%` : "\u2014"}
+            icon={Users}
+            iconColor="text-[#c4983e]"
+          />
+        </div>
       </div>
 
-      <Tabs defaultValue="revenue">
-        <TabsList className="bg-muted/50">
-          <TabsTrigger value="revenue" className="text-xs">Revenue</TabsTrigger>
-          <TabsTrigger value="bookings" className="text-xs">Bookings</TabsTrigger>
-          <TabsTrigger value="customers" className="text-xs">Customers</TabsTrigger>
-        </TabsList>
+      {/* Tabs */}
+      <div className="cadence-animate cadence-delay-5">
+        <div className="flex gap-1 bg-muted/50 p-1 rounded-[10px] w-fit mb-5">
+          {(["revenue", "bookings", "customers"] as Tab[]).map((t) => (
+            <button
+              key={t}
+              onClick={() => setTab(t)}
+              className={`px-4 py-2 rounded-[8px] text-[13px] font-medium transition-colors capitalize ${
+                tab === t
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {t}
+            </button>
+          ))}
+        </div>
 
         {/* Revenue Tab */}
-        <TabsContent value="revenue" className="mt-4 space-y-4">
-          <RevenueChart data={data?.revenueData ?? []} />
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <ServicePopularityChart data={data?.popularityData ?? []} />
-            <StylistPerformanceChart data={data?.stylistPerformanceData ?? []} />
+        {tab === "revenue" && (
+          <div className="space-y-5">
+            <RevenueChart data={data?.revenueData ?? []} />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+              <ServicePopularityChart data={data?.popularityData ?? []} />
+              <StylistPerformanceChart data={data?.stylistPerformanceData ?? []} />
+            </div>
           </div>
-        </TabsContent>
+        )}
 
         {/* Bookings Tab */}
-        <TabsContent value="bookings" className="mt-4 space-y-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <BookingFunnelChart data={data?.funnelData ?? []} />
-            <BookingTrendChart data={data?.trendData ?? []} />
+        {tab === "bookings" && (
+          <div className="space-y-5">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+              <BookingFunnelChart data={data?.funnelData ?? []} />
+              <BookingTrendChart data={data?.trendData ?? []} />
+            </div>
+            <PeakHoursHeatmap data={data?.peakData ?? []} />
           </div>
-          <PeakHoursHeatmap data={data?.peakData ?? []} />
-        </TabsContent>
+        )}
 
         {/* Customers Tab */}
-        <TabsContent value="customers" className="mt-4 space-y-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <CustomerRetentionChart data={data?.retentionData ?? []} />
-            <StylistPerformanceChart data={data?.stylistPerformanceData ?? []} />
+        {tab === "customers" && (
+          <div className="space-y-5">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+              <CustomerRetentionChart data={data?.retentionData ?? []} />
+              <StylistPerformanceChart data={data?.stylistPerformanceData ?? []} />
+            </div>
           </div>
-        </TabsContent>
-      </Tabs>
+        )}
+      </div>
     </div>
   );
 }

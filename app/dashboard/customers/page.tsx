@@ -21,28 +21,22 @@ export default function CustomersPage() {
   }, [customers]);
 
   return (
-    <div className="space-y-6 max-w-[1400px]">
-      <div>
-        <h1 className="text-xl font-bold text-foreground">Customers</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">
-          View customer profiles, booking history, and no-show tracking.
-        </p>
-      </div>
-
+    <div className="space-y-7 max-w-[1400px]">
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <StatCard label="Total Customers" value={String(stats.total)} icon={Users} iconColor="text-primary" />
-        <StatCard
-          label="Active"
-          value={String(stats.active)}
-          icon={UserCheck}
-          iconColor="text-emerald-600"
-        />
-        <StatCard label="Blacklisted" value={String(stats.blacklisted)} icon={UserX} iconColor="text-red-500" />
+        <div className="cadence-animate cadence-delay-1">
+          <StatCard label="Total Customers" value={String(stats.total)} icon={Users} iconColor="text-primary" />
+        </div>
+        <div className="cadence-animate cadence-delay-2">
+          <StatCard label="Active" value={String(stats.active)} icon={UserCheck} iconColor="text-[#5a9a6e]" />
+        </div>
+        <div className="cadence-animate cadence-delay-3">
+          <StatCard label="Blacklisted" value={String(stats.blacklisted)} icon={UserX} iconColor="text-[#c45a5a]" />
+        </div>
       </div>
 
       {/* Main content */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 cadence-animate cadence-delay-4">
         <div className="lg:col-span-2">
           <CustomerTable
             customers={customers}
@@ -51,7 +45,7 @@ export default function CustomersPage() {
           />
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-5">
           <CustomerProfile
             customerId={selectedCustomerId}
             customers={customers}

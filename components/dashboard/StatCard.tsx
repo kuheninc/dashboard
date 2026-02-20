@@ -1,6 +1,5 @@
 import { cn } from "@/lib/utils";
-import { Card, CardContent } from "@/components/ui/card";
-import { TrendingUp, TrendingDown, type LucideIcon } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
 interface StatCardProps {
   label: string;
@@ -12,36 +11,26 @@ interface StatCardProps {
 
 export default function StatCard({ label, value, trend, icon: Icon, iconColor = "text-primary" }: StatCardProps) {
   return (
-    <Card className="shadow-sm border-border/60">
-      <CardContent className="p-5">
-        <div className="flex items-start justify-between">
-          <div className="space-y-2">
-            <p className="text-sm text-muted-foreground">{label}</p>
-            <p className="text-2xl font-bold text-foreground tracking-tight">{value}</p>
-            {trend && (
-              <div className="flex items-center gap-1">
-                {trend.positive ? (
-                  <TrendingUp className="w-3.5 h-3.5 text-emerald-500" />
-                ) : (
-                  <TrendingDown className="w-3.5 h-3.5 text-red-500" />
-                )}
-                <span
-                  className={cn(
-                    "text-xs font-medium",
-                    trend.positive ? "text-emerald-600" : "text-red-600"
-                  )}
-                >
-                  {trend.value}
-                </span>
-                <span className="text-xs text-muted-foreground">vs last period</span>
-              </div>
-            )}
-          </div>
-          <div className={cn("p-2.5 rounded-xl bg-primary/5", iconColor.replace("text-", "bg-").replace(/\d+/, "50"))}>
-            <Icon className={cn("w-5 h-5", iconColor)} />
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+    <div className="bg-card border border-border rounded-[14px] p-5 transition-all hover:shadow-[0_4px_16px_rgba(42,36,32,0.06)] hover:border-[rgba(42,36,32,0.14)]">
+      <div className="flex items-center gap-1.5 text-[12px] text-[#9c9184] mb-2">
+        <Icon className={cn("w-3.5 h-3.5", iconColor)} />
+        {label}
+      </div>
+      <div className="font-display text-[30px] text-foreground leading-none mb-1.5">
+        {value}
+      </div>
+      {trend && (
+        <span
+          className={cn(
+            "inline-flex items-center gap-1 text-[12px] font-medium px-2 py-0.5 rounded-full",
+            trend.positive
+              ? "bg-[rgba(90,154,110,0.08)] text-[#5a9a6e]"
+              : "bg-[rgba(196,90,90,0.08)] text-[#c45a5a]"
+          )}
+        >
+          {trend.positive ? "↑" : "↓"} {trend.value}
+        </span>
+      )}
+    </div>
   );
 }

@@ -3,14 +3,6 @@
 import { useState, useMemo } from "react";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import BookingStatusBadge from "@/components/dashboard/BookingStatusBadge";
 import { useDashboard } from "@/lib/dashboard-context";
 import { enrichBookings } from "@/lib/dashboard-helpers";
@@ -50,6 +42,32 @@ function getDateRange(): { startDate: string; endDate: string } {
   return { startDate, endDate };
 }
 
+function getInitials(name: string): string {
+  return name
+    .split(" ")
+    .map((w) => w[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+}
+
+const avatarColors = [
+  "bg-[rgba(90,154,110,0.12)] text-[#5a9a6e]",
+  "bg-[rgba(196,152,62,0.12)] text-[#c4983e]",
+  "bg-[rgba(166,139,107,0.12)] text-[#a68b6b]",
+  "bg-[rgba(130,120,180,0.12)] text-[#8278b4]",
+  "bg-[rgba(196,90,90,0.12)] text-[#c45a5a]",
+  "bg-[rgba(80,140,180,0.12)] text-[#508cb4]",
+];
+
+function getAvatarColor(name: string): string {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return avatarColors[Math.abs(hash) % avatarColors.length];
+}
+
 export default function BookingTable() {
   const { salonId, customers, services, stylists } = useDashboard();
   const { startDate, endDate } = useMemo(() => getDateRange(), []);
@@ -67,7 +85,7 @@ export default function BookingTable() {
       <div className="space-y-4">
         <div className="flex items-center justify-center py-12">
           <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-          <span className="ml-2 text-sm text-muted-foreground">Loading bookings...</span>
+          <span className="ml-2 text-[13px] text-muted-foreground">Loading bookings...</span>
         </div>
       </div>
     );
@@ -90,30 +108,30 @@ export default function BookingTable() {
     .sort((a, b) => b.date.localeCompare(a.date) || b.startTime.localeCompare(a.startTime));
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
-        <div className="flex items-center gap-2 bg-muted/50 rounded-lg px-3 py-2 flex-1 max-w-sm">
-          <Search className="w-4 h-4 text-muted-foreground" />
+        <div className="relative flex items-center flex-1 max-w-sm">
+          <Search className="absolute left-4 w-4 h-4 text-[#9c9184]" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search by customer or service..."
-            className="bg-transparent text-sm outline-none placeholder:text-muted-foreground w-full"
+            className="w-full bg-card border border-border rounded-[10px] pl-10 pr-4 py-2.5 text-[13px] text-foreground placeholder:text-[#9c9184] outline-none focus:ring-1 focus:ring-primary/30 transition-shadow"
           />
         </div>
-        <div className="flex items-center gap-2">
-          <Filter className="w-4 h-4 text-muted-foreground" />
+        <div className="flex items-center gap-2.5">
+          <Filter className="w-4 h-4 text-[#9c9184]" />
           <div className="flex gap-1.5">
             {statusOptions.map((opt) => (
               <button
                 key={opt.value}
                 onClick={() => setStatusFilter(opt.value)}
-                className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
+                className={`px-2.5 py-1 text-[11px] font-medium transition-colors ${
                   statusFilter === opt.value
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted text-muted-foreground hover:bg-muted/80"
+                    ? "bg-primary text-primary-foreground rounded-[8px]"
+                    : "bg-muted text-muted-foreground rounded-[8px] hover:bg-[rgba(166,139,107,0.08)]"
                 }`}
               >
                 {opt.label}
@@ -124,48 +142,86 @@ export default function BookingTable() {
       </div>
 
       {/* Table */}
-      <div className="rounded-lg border border-border/60 overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-muted/30 hover:bg-muted/30">
-              <TableHead className="text-xs font-semibold">Date</TableHead>
-              <TableHead className="text-xs font-semibold">Time</TableHead>
-              <TableHead className="text-xs font-semibold">Customer</TableHead>
-              <TableHead className="text-xs font-semibold">Service</TableHead>
-              <TableHead className="text-xs font-semibold">Stylist</TableHead>
-              <TableHead className="text-xs font-semibold">Price</TableHead>
-              <TableHead className="text-xs font-semibold">Status</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
+      <div className="bg-card border border-border rounded-[14px] overflow-hidden transition-shadow hover:shadow-[0_2px_12px_rgba(42,36,32,0.06)]">
+        <table className="w-full">
+          <thead>
+            <tr className="bg-[rgba(166,139,107,0.05)]">
+              <th className="text-left text-[11px] tracking-[1px] uppercase text-[#9c9184] font-medium px-[22px] py-[14px]">
+                Date
+              </th>
+              <th className="text-left text-[11px] tracking-[1px] uppercase text-[#9c9184] font-medium px-[22px] py-[14px]">
+                Time
+              </th>
+              <th className="text-left text-[11px] tracking-[1px] uppercase text-[#9c9184] font-medium px-[22px] py-[14px]">
+                Customer
+              </th>
+              <th className="text-left text-[11px] tracking-[1px] uppercase text-[#9c9184] font-medium px-[22px] py-[14px]">
+                Service
+              </th>
+              <th className="text-left text-[11px] tracking-[1px] uppercase text-[#9c9184] font-medium px-[22px] py-[14px]">
+                Stylist
+              </th>
+              <th className="text-left text-[11px] tracking-[1px] uppercase text-[#9c9184] font-medium px-[22px] py-[14px]">
+                Price
+              </th>
+              <th className="text-left text-[11px] tracking-[1px] uppercase text-[#9c9184] font-medium px-[22px] py-[14px]">
+                Status
+              </th>
+            </tr>
+          </thead>
+          <tbody>
             {filtered.map((booking) => (
-              <TableRow key={booking._id} className="hover:bg-muted/20">
-                <TableCell className="text-sm">{booking.date}</TableCell>
-                <TableCell className="text-sm text-muted-foreground">
-                  {booking.startTime} - {booking.endTime}
-                </TableCell>
-                <TableCell className="text-sm font-medium">
-                  {booking.customerName}
-                </TableCell>
-                <TableCell className="text-sm">{booking.serviceName}</TableCell>
-                <TableCell className="text-sm text-muted-foreground">
+              <tr
+                key={booking._id}
+                className="border-t border-border hover:bg-[rgba(166,139,107,0.05)] transition-colors"
+              >
+                <td className="text-[13px] text-foreground px-[22px] py-[14px]">
+                  {booking.date}
+                </td>
+                <td className="text-[13px] px-[22px] py-[14px]">
+                  <span className="font-medium text-foreground" style={{ fontVariantNumeric: "tabular-nums" }}>
+                    {booking.startTime}
+                  </span>
+                  <span className="text-[#9c9184] mx-1">-</span>
+                  <span className="font-medium text-foreground" style={{ fontVariantNumeric: "tabular-nums" }}>
+                    {booking.endTime}
+                  </span>
+                </td>
+                <td className="text-[13px] px-[22px] py-[14px]">
+                  <div className="flex items-center gap-2.5">
+                    <div
+                      className={`w-8 h-8 rounded-lg flex items-center justify-center text-[12px] font-semibold ${getAvatarColor(booking.customerName)}`}
+                    >
+                      {getInitials(booking.customerName)}
+                    </div>
+                    <span className="font-medium text-foreground">
+                      {booking.customerName}
+                    </span>
+                  </div>
+                </td>
+                <td className="text-[13px] text-muted-foreground px-[22px] py-[14px]">
+                  {booking.serviceName}
+                </td>
+                <td className="text-[13px] text-muted-foreground px-[22px] py-[14px]">
                   {booking.stylistName}
-                </TableCell>
-                <TableCell className="text-sm">RM {booking.servicePrice}</TableCell>
-                <TableCell>
+                </td>
+                <td className="text-[13px] text-foreground px-[22px] py-[14px]" style={{ fontVariantNumeric: "tabular-nums" }}>
+                  RM {booking.servicePrice}
+                </td>
+                <td className="text-[13px] px-[22px] py-[14px]">
                   <BookingStatusBadge status={booking.status} />
-                </TableCell>
-              </TableRow>
+                </td>
+              </tr>
             ))}
             {filtered.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={7} className="text-center py-8 text-sm text-muted-foreground">
+              <tr>
+                <td colSpan={7} className="text-center py-12 text-[13px] text-[#9c9184]">
                   No bookings found
-                </TableCell>
-              </TableRow>
+                </td>
+              </tr>
             )}
-          </TableBody>
-        </Table>
+          </tbody>
+        </table>
       </div>
     </div>
   );

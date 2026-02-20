@@ -1,11 +1,10 @@
 "use client";
 
-import { useMemo } from "react";
+import { useState, useMemo } from "react";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useDashboard } from "@/lib/dashboard-context";
 import { getTodayDateStr, getDateRangeStr } from "@/lib/dashboard-helpers";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import PendingApprovals from "@/components/dashboard/bookings/PendingApprovals";
 import BookingTable from "@/components/dashboard/bookings/BookingTable";
 import CalendarView from "@/components/dashboard/bookings/CalendarView";
@@ -16,14 +15,14 @@ export default function BookingsPage() {
   const { salonId } = useDashboard();
   const today = getTodayDateStr();
   const { startDate: monthStart, endDate: monthEnd } = useMemo(() => getDateRangeStr(30), []);
-
-  // Compute this week range
   const { startDate: weekStart, endDate: weekEnd } = useMemo(() => getDateRangeStr(7), []);
 
   const todayBookings = useQuery(api.bookings.queries.getByDate, { salonId, date: today });
   const pendingBookings = useQuery(api.bookings.queries.getPendingApproval, { salonId });
   const weekBookings = useQuery(api.bookings.queries.getByDateRange, { salonId, startDate: weekStart, endDate: weekEnd });
   const monthBookings = useQuery(api.bookings.queries.getByDateRange, { salonId, startDate: monthStart, endDate: monthEnd });
+
+  const [tab, setTab] = useState<"list" | "calendar">("list");
 
   const cancelledCount = useMemo(() => {
     if (!monthBookings) return 0;
@@ -33,60 +32,53 @@ export default function BookingsPage() {
   }, [monthBookings]);
 
   return (
-    <div className="space-y-6 max-w-[1400px]">
-      <div>
-        <h1 className="text-xl font-bold text-foreground">Bookings</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">
-          Manage appointments, approvals, and scheduling.
-        </p>
-      </div>
-
-      {/* Quick stats */}
+    <div className="space-y-7 max-w-[1400px]">
+      {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          label="Today"
-          value={todayBookings ? String(todayBookings.length) : "—"}
-          icon={CalendarDays}
-          iconColor="text-primary"
-        />
-        <StatCard
-          label="Pending Approval"
-          value={pendingBookings ? String(pendingBookings.length) : "—"}
-          icon={Clock}
-          iconColor="text-amber-600"
-        />
-        <StatCard
-          label="This Week"
-          value={weekBookings ? String(weekBookings.length) : "—"}
-          icon={CheckCircle2}
-          iconColor="text-emerald-600"
-        />
-        <StatCard
-          label="Cancelled (Month)"
-          value={monthBookings ? String(cancelledCount) : "—"}
-          icon={XCircle}
-          iconColor="text-red-500"
-        />
+        <div className="cadence-animate cadence-delay-1">
+          <StatCard label="Today" value={todayBookings ? String(todayBookings.length) : "\u2014"} icon={CalendarDays} iconColor="text-primary" />
+        </div>
+        <div className="cadence-animate cadence-delay-2">
+          <StatCard label="Pending Approval" value={pendingBookings ? String(pendingBookings.length) : "\u2014"} icon={Clock} iconColor="text-[#c4983e]" />
+        </div>
+        <div className="cadence-animate cadence-delay-3">
+          <StatCard label="This Week" value={weekBookings ? String(weekBookings.length) : "\u2014"} icon={CheckCircle2} iconColor="text-[#5a9a6e]" />
+        </div>
+        <div className="cadence-animate cadence-delay-4">
+          <StatCard label="Cancelled (Month)" value={monthBookings ? String(cancelledCount) : "\u2014"} icon={XCircle} iconColor="text-[#c45a5a]" />
+        </div>
       </div>
 
       {/* Pending approvals */}
       <PendingApprovals />
 
-      {/* Tabs: List vs Calendar */}
-      <Tabs defaultValue="list">
-        <TabsList className="bg-muted/50">
-          <TabsTrigger value="list" className="text-xs">List View</TabsTrigger>
-          <TabsTrigger value="calendar" className="text-xs">Calendar View</TabsTrigger>
-        </TabsList>
+      {/* Tabs */}
+      <div className="cadence-animate cadence-delay-5">
+        <div className="flex gap-1 bg-muted/50 p-1 rounded-[10px] w-fit mb-5">
+          <button
+            onClick={() => setTab("list")}
+            className={`px-4 py-2 rounded-[8px] text-[13px] font-medium transition-colors ${
+              tab === "list"
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            List View
+          </button>
+          <button
+            onClick={() => setTab("calendar")}
+            className={`px-4 py-2 rounded-[8px] text-[13px] font-medium transition-colors ${
+              tab === "calendar"
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Calendar View
+          </button>
+        </div>
 
-        <TabsContent value="list" className="mt-4">
-          <BookingTable />
-        </TabsContent>
-
-        <TabsContent value="calendar" className="mt-4">
-          <CalendarView />
-        </TabsContent>
-      </Tabs>
+        {tab === "list" ? <BookingTable /> : <CalendarView />}
+      </div>
     </div>
   );
 }

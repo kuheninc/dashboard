@@ -1,6 +1,3 @@
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
-
 export type BookingStatus =
   | "pending_approval"
   | "confirmed"
@@ -11,22 +8,70 @@ export type BookingStatus =
   | "cancelled_customer"
   | "cancelled_admin";
 
-const statusConfig: Record<BookingStatus, { label: string; className: string }> = {
-  pending_approval: { label: "Pending", className: "bg-amber-100 text-amber-700 border-amber-200" },
-  confirmed: { label: "Confirmed", className: "bg-blue-100 text-blue-700 border-blue-200" },
-  reminder_sent: { label: "Reminded", className: "bg-sky-100 text-sky-700 border-sky-200" },
-  customer_confirmed: { label: "Customer OK", className: "bg-indigo-100 text-indigo-700 border-indigo-200" },
-  completed: { label: "Completed", className: "bg-emerald-100 text-emerald-700 border-emerald-200" },
-  no_show: { label: "No Show", className: "bg-red-100 text-red-700 border-red-200" },
-  cancelled_customer: { label: "Cancelled", className: "bg-gray-100 text-gray-600 border-gray-200" },
-  cancelled_admin: { label: "Cancelled", className: "bg-gray-100 text-gray-600 border-gray-200" },
+const statusConfig: Record<
+  BookingStatus,
+  { label: string; color: string; bg: string }
+> = {
+  pending_approval: {
+    label: "Pending",
+    color: "#c4983e",
+    bg: "rgba(196,152,62,0.08)",
+  },
+  confirmed: {
+    label: "Confirmed",
+    color: "#5a9a6e",
+    bg: "rgba(90,154,110,0.08)",
+  },
+  reminder_sent: {
+    label: "Reminded",
+    color: "#5a9a6e",
+    bg: "rgba(90,154,110,0.08)",
+  },
+  customer_confirmed: {
+    label: "Customer OK",
+    color: "#5a9a6e",
+    bg: "rgba(90,154,110,0.08)",
+  },
+  completed: {
+    label: "Completed",
+    color: "#5a9a6e",
+    bg: "rgba(90,154,110,0.08)",
+  },
+  no_show: {
+    label: "No Show",
+    color: "#c45a5a",
+    bg: "rgba(196,90,90,0.08)",
+  },
+  cancelled_customer: {
+    label: "Cancelled",
+    color: "#9c9184",
+    bg: "rgba(166,139,107,0.05)",
+  },
+  cancelled_admin: {
+    label: "Cancelled",
+    color: "#9c9184",
+    bg: "rgba(166,139,107,0.05)",
+  },
+};
+
+const fallbackConfig = {
+  label: "",
+  color: "#9c9184",
+  bg: "rgba(166,139,107,0.05)",
 };
 
 export default function BookingStatusBadge({ status }: { status: string }) {
-  const config = statusConfig[status as BookingStatus] ?? { label: status, className: "bg-gray-100 text-gray-600 border-gray-200" };
+  const config = statusConfig[status as BookingStatus] ?? {
+    ...fallbackConfig,
+    label: status,
+  };
+
   return (
-    <Badge variant="outline" className={cn("text-[11px] font-medium px-2 py-0.5", config.className)}>
+    <span
+      className="text-[11px] font-medium px-2.5 py-1 rounded-full inline-block"
+      style={{ color: config.color, backgroundColor: config.bg }}
+    >
       {config.label}
-    </Badge>
+    </span>
   );
 }
