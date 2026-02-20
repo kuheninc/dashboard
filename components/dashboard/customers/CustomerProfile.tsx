@@ -1,19 +1,28 @@
+"use client";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import BookingStatusBadge from "@/components/dashboard/BookingStatusBadge";
-import {
-  mockCustomers,
-  mockBookings,
-  getServiceName,
-  getStylistName,
-} from "@/lib/mock-data";
+import type { BookingStatus } from "@/components/dashboard/BookingStatusBadge";
+import { enrichBookings } from "@/lib/dashboard-helpers";
+import { useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import type { Doc, Id } from "@/convex/_generated/dataModel";
 import { User, Phone, Mail, Calendar, AlertTriangle } from "lucide-react";
 
 interface CustomerProfileProps {
-  customerId: string | null;
+  customerId: Id<"customers"> | null;
+  customers: Doc<"customers">[];
+  services: Doc<"services">[];
+  stylists: Doc<"stylists">[];
 }
 
-export default function CustomerProfile({ customerId }: CustomerProfileProps) {
+export default function CustomerProfile({ customerId, customers, services, stylists }: CustomerProfileProps) {
+  const rawBookings = useQuery(
+    api.bookings.queries.getByCustomer,
+    customerId ? { customerId } : "skip"
+  );
+
   if (!customerId) {
     return (
       <Card className="shadow-sm border-border/60">
@@ -25,12 +34,14 @@ export default function CustomerProfile({ customerId }: CustomerProfileProps) {
     );
   }
 
-  const customer = mockCustomers.find((c) => c.id === customerId);
+  const customer = customers.find((c) => c._id === customerId);
   if (!customer) return null;
 
-  const customerBookings = mockBookings
-    .filter((b) => b.customerId === customerId)
-    .sort((a, b) => b.date.localeCompare(a.date));
+  const bookings = rawBookings
+    ? enrichBookings(rawBookings, customers, services, stylists).sort(
+        (a, b) => b.date.localeCompare(a.date)
+      )
+    : [];
 
   return (
     <Card className="shadow-sm border-border/60">
@@ -63,7 +74,14 @@ export default function CustomerProfile({ customerId }: CustomerProfileProps) {
           )}
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Calendar className="w-3.5 h-3.5" />
-            <span>Member since {customer.joinedDate}</span>
+            <span>
+              Member since{" "}
+              {new Date(customer._creationTime).toLocaleDateString("en-MY", {
+                year: "numeric",
+                month: "short",
+                day: "numeric",
+              })}
+            </span>
           </div>
         </div>
 
@@ -108,19 +126,22 @@ export default function CustomerProfile({ customerId }: CustomerProfileProps) {
         <div>
           <p className="text-xs font-semibold text-foreground mb-2">Recent Bookings</p>
           <div className="space-y-1.5">
-            {customerBookings.slice(0, 6).map((b) => (
-              <div key={b.id} className="flex items-center justify-between py-1.5 px-2 rounded bg-muted/20">
-                <div>
-                  <p className="text-xs font-medium">{getServiceName(b.serviceId)}</p>
-                  <p className="text-[10px] text-muted-foreground">
-                    {b.date} &middot; {b.startTime} &middot; {getStylistName(b.stylistId)}
-                  </p>
-                </div>
-                <BookingStatusBadge status={b.status} />
-              </div>
-            ))}
-            {customerBookings.length === 0 && (
+            {rawBookings === undefined ? (
+              <p className="text-xs text-muted-foreground text-center py-4">Loading...</p>
+            ) : bookings.length === 0 ? (
               <p className="text-xs text-muted-foreground text-center py-4">No bookings yet</p>
+            ) : (
+              bookings.slice(0, 6).map((b) => (
+                <div key={b._id} className="flex items-center justify-between py-1.5 px-2 rounded bg-muted/20">
+                  <div>
+                    <p className="text-xs font-medium">{b.serviceName}</p>
+                    <p className="text-[10px] text-muted-foreground">
+                      {b.date} &middot; {b.startTime} &middot; {b.stylistName}
+                    </p>
+                  </div>
+                  <BookingStatusBadge status={b.status as BookingStatus} />
+                </div>
+              ))
             )}
           </div>
         </div>

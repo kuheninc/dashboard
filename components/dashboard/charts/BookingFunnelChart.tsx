@@ -2,7 +2,6 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
-import { bookingFunnelData } from "@/lib/mock-data";
 
 const COLORS = [
   "hsl(220, 100%, 50%)",
@@ -11,7 +10,11 @@ const COLORS = [
   "hsl(160, 84%, 39%)",
 ];
 
-export default function BookingFunnelChart() {
+interface BookingFunnelChartProps {
+  data: { stage: string; count: number }[];
+}
+
+export default function BookingFunnelChart({ data }: BookingFunnelChartProps) {
   return (
     <Card className="shadow-sm border-border/60">
       <CardHeader className="pb-2">
@@ -21,7 +24,7 @@ export default function BookingFunnelChart() {
       <CardContent className="pt-2">
         <div className="h-[260px]">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={bookingFunnelData} margin={{ top: 5, right: 10, bottom: 0, left: -10 }}>
+            <BarChart data={data} margin={{ top: 5, right: 10, bottom: 0, left: -10 }}>
               <XAxis
                 dataKey="stage"
                 tick={{ fontSize: 12, fill: "hsl(220, 9%, 46%)" }}
@@ -43,7 +46,7 @@ export default function BookingFunnelChart() {
                 }}
               />
               <Bar dataKey="count" radius={[6, 6, 0, 0]} barSize={48}>
-                {bookingFunnelData.map((_, index) => (
+                {data.map((_, index) => (
                   <Cell key={index} fill={COLORS[index]} />
                 ))}
               </Bar>

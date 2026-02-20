@@ -2,11 +2,14 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { bookingTrendData } from "@/lib/mock-data";
 import { format, parseISO } from "date-fns";
 
-export default function BookingTrendChart() {
-  const data = bookingTrendData.map((d) => ({
+interface BookingTrendChartProps {
+  data: { date: string; value: number }[];
+}
+
+export default function BookingTrendChart({ data: rawData }: BookingTrendChartProps) {
+  const data = rawData.map((d) => ({
     ...d,
     label: format(parseISO(d.date), "MMM d"),
   }));

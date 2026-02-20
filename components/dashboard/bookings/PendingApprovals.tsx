@@ -1,35 +1,44 @@
 "use client";
 
+import { useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Check, X, Clock } from "lucide-react";
-import { mockBookings, getCustomerName, getServiceName, getStylistName } from "@/lib/mock-data";
+import { useDashboard } from "@/lib/dashboard-context";
+import { enrichBookings } from "@/lib/dashboard-helpers";
 
 export default function PendingApprovals() {
-  const pendingBookings = mockBookings.filter((b) => b.status === "pending_approval");
+  const { salonId, customers, services, stylists } = useDashboard();
+  const bookings = useQuery(api.bookings.queries.getPendingApproval, { salonId });
 
-  if (pendingBookings.length === 0) return null;
+  // Still loading
+  if (bookings === undefined) return null;
+
+  const enriched = enrichBookings(bookings, customers, services, stylists);
+
+  if (enriched.length === 0) return null;
 
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2">
         <h3 className="text-sm font-semibold text-foreground">Pending Approval</h3>
         <Badge className="bg-amber-100 text-amber-700 border-amber-200 text-[11px]">
-          {pendingBookings.length}
+          {enriched.length}
         </Badge>
       </div>
       <div className="flex gap-3 overflow-x-auto pb-1">
-        {pendingBookings.map((booking) => (
-          <Card key={booking.id} className="shadow-sm border-amber-200/60 bg-amber-50/30 min-w-[260px] flex-shrink-0">
+        {enriched.map((booking) => (
+          <Card key={booking._id} className="shadow-sm border-amber-200/60 bg-amber-50/30 min-w-[260px] flex-shrink-0">
             <CardContent className="p-4">
               <div className="flex items-start justify-between mb-3">
                 <div>
                   <p className="text-sm font-medium text-foreground">
-                    {getCustomerName(booking.customerId)}
+                    {booking.customerName}
                   </p>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    {getServiceName(booking.serviceId)}
+                    {booking.serviceName}
                   </p>
                 </div>
                 <Clock className="w-4 h-4 text-amber-500" />
@@ -40,7 +49,7 @@ export default function PendingApprovals() {
                 <span>{booking.startTime} - {booking.endTime}</span>
               </div>
               <p className="text-xs text-muted-foreground mb-3">
-                Stylist: {getStylistName(booking.stylistId)}
+                Stylist: {booking.stylistName}
               </p>
               <div className="flex gap-2">
                 <Button size="sm" className="flex-1 h-8 text-xs bg-emerald-600 hover:bg-emerald-700">

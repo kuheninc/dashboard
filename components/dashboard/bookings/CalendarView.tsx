@@ -1,17 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import { useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
-import {
-  mockBookings,
-  getCustomerName,
-  getServiceName,
-  type BookingStatus,
-} from "@/lib/mock-data";
 import BookingStatusBadge from "@/components/dashboard/BookingStatusBadge";
+import { useDashboard } from "@/lib/dashboard-context";
+import { enrichBookings, type EnrichedBooking } from "@/lib/dashboard-helpers";
 import {
   startOfMonth,
   endOfMonth,
@@ -36,9 +34,32 @@ const statusDotColor: Record<string, string> = {
   cancelled_admin: "bg-gray-300",
 };
 
+function getMonthRange(month: Date): { startDate: string; endDate: string } {
+  const calStart = startOfWeek(startOfMonth(month));
+  const calEnd = endOfWeek(endOfMonth(month));
+  return {
+    startDate: format(calStart, "yyyy-MM-dd"),
+    endDate: format(calEnd, "yyyy-MM-dd"),
+  };
+}
+
 export default function CalendarView() {
-  const [currentMonth, setCurrentMonth] = useState(new Date(2026, 1, 1)); // Feb 2026
-  const [selectedDate, setSelectedDate] = useState<string | null>("2026-02-20");
+  const { salonId, customers, services, stylists } = useDashboard();
+  const [currentMonth, setCurrentMonth] = useState(() => new Date());
+  const [selectedDate, setSelectedDate] = useState<string | null>(() =>
+    new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kuala_Lumpur" })
+  );
+
+  const { startDate, endDate } = useMemo(
+    () => getMonthRange(currentMonth),
+    [currentMonth]
+  );
+
+  const bookings = useQuery(api.bookings.queries.getByDateRange, {
+    salonId,
+    startDate,
+    endDate,
+  });
 
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
@@ -46,11 +67,31 @@ export default function CalendarView() {
   const calendarEnd = endOfWeek(monthEnd);
   const days = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
 
-  const selectedBookings = selectedDate
-    ? mockBookings
-        .filter((b) => b.date === selectedDate)
-        .sort((a, b) => a.startTime.localeCompare(b.startTime))
-    : [];
+  const enriched = useMemo(() => {
+    if (!bookings) return [];
+    return enrichBookings(bookings, customers, services, stylists);
+  }, [bookings, customers, services, stylists]);
+
+  // Group bookings by date for quick lookup
+  const bookingsByDate = useMemo(() => {
+    const map = new Map<string, EnrichedBooking[]>();
+    for (const b of enriched) {
+      const existing = map.get(b.date);
+      if (existing) {
+        existing.push(b);
+      } else {
+        map.set(b.date, [b]);
+      }
+    }
+    return map;
+  }, [enriched]);
+
+  const selectedBookings = useMemo(() => {
+    if (!selectedDate) return [];
+    return (bookingsByDate.get(selectedDate) ?? []).sort((a, b) =>
+      a.startTime.localeCompare(b.startTime)
+    );
+  }, [selectedDate, bookingsByDate]);
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -95,7 +136,7 @@ export default function CalendarView() {
           <div className="grid grid-cols-7 gap-0.5">
             {days.map((day) => {
               const dateStr = format(day, "yyyy-MM-dd");
-              const dayBookings = mockBookings.filter((b) => b.date === dateStr);
+              const dayBookings = bookingsByDate.get(dateStr) ?? [];
               const isSelected = selectedDate === dateStr;
               const inMonth = isSameMonth(day, currentMonth);
 
@@ -122,7 +163,7 @@ export default function CalendarView() {
                     <div className="flex flex-wrap gap-0.5 mt-1">
                       {dayBookings.slice(0, 3).map((b) => (
                         <div
-                          key={b.id}
+                          key={b._id}
                           className={cn("w-1.5 h-1.5 rounded-full", statusDotColor[b.status])}
                         />
                       ))}
@@ -135,6 +176,14 @@ export default function CalendarView() {
               );
             })}
           </div>
+
+          {/* Loading indicator */}
+          {bookings === undefined && (
+            <div className="flex items-center justify-center py-4">
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+              <span className="ml-2 text-sm text-muted-foreground">Loading...</span>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -149,17 +198,22 @@ export default function CalendarView() {
           </p>
         </CardHeader>
         <CardContent className="space-y-2">
-          {selectedBookings.length === 0 ? (
+          {bookings === undefined ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+              <span className="ml-2 text-sm text-muted-foreground">Loading...</span>
+            </div>
+          ) : selectedBookings.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-8">No bookings</p>
           ) : (
             selectedBookings.map((b) => (
-              <div key={b.id} className="p-2.5 rounded-lg bg-muted/30 space-y-1">
+              <div key={b._id} className="p-2.5 rounded-lg bg-muted/30 space-y-1">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">{getCustomerName(b.customerId)}</span>
+                  <span className="text-sm font-medium">{b.customerName}</span>
                   <BookingStatusBadge status={b.status} />
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  {b.startTime} - {b.endTime} &middot; {getServiceName(b.serviceId)}
+                  {b.startTime} - {b.endTime} &middot; {b.serviceName}
                 </p>
               </div>
             ))

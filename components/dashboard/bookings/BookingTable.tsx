@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import { useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
 import {
   Table,
   TableBody,
@@ -10,15 +12,19 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import BookingStatusBadge from "@/components/dashboard/BookingStatusBadge";
-import {
-  mockBookings,
-  getCustomerName,
-  getServiceName,
-  getStylistName,
-  getServicePrice,
-  type BookingStatus,
-} from "@/lib/mock-data";
+import { useDashboard } from "@/lib/dashboard-context";
+import { enrichBookings } from "@/lib/dashboard-helpers";
 import { Search, Filter } from "lucide-react";
+
+type BookingStatus =
+  | "pending_approval"
+  | "confirmed"
+  | "reminder_sent"
+  | "customer_confirmed"
+  | "completed"
+  | "no_show"
+  | "cancelled_customer"
+  | "cancelled_admin";
 
 const statusOptions: { label: string; value: BookingStatus | "all" }[] = [
   { label: "All", value: "all" },
@@ -29,17 +35,55 @@ const statusOptions: { label: string; value: BookingStatus | "all" }[] = [
   { label: "Cancelled", value: "cancelled_customer" },
 ];
 
+function getDateRange(): { startDate: string; endDate: string } {
+  const now = new Date();
+  const tz = "Asia/Kuala_Lumpur";
+
+  const start = new Date(now);
+  start.setDate(now.getDate() - 30);
+  const startDate = start.toLocaleDateString("en-CA", { timeZone: tz });
+
+  const end = new Date(now);
+  end.setDate(now.getDate() + 7);
+  const endDate = end.toLocaleDateString("en-CA", { timeZone: tz });
+
+  return { startDate, endDate };
+}
+
 export default function BookingTable() {
+  const { salonId, customers, services, stylists } = useDashboard();
+  const { startDate, endDate } = useMemo(() => getDateRange(), []);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<BookingStatus | "all">("all");
 
-  const filtered = mockBookings
+  const bookings = useQuery(api.bookings.queries.getByDateRange, {
+    salonId,
+    startDate,
+    endDate,
+  });
+
+  if (bookings === undefined) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-center py-12">
+          <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          <span className="ml-2 text-sm text-muted-foreground">Loading bookings...</span>
+        </div>
+      </div>
+    );
+  }
+
+  const enriched = enrichBookings(bookings, customers, services, stylists);
+
+  const filtered = enriched
     .filter((b) => {
       if (statusFilter !== "all" && b.status !== statusFilter) return false;
       if (search) {
-        const customerName = getCustomerName(b.customerId).toLowerCase();
-        const serviceName = getServiceName(b.serviceId).toLowerCase();
-        return customerName.includes(search.toLowerCase()) || serviceName.includes(search.toLowerCase());
+        const term = search.toLowerCase();
+        return (
+          b.customerName.toLowerCase().includes(term) ||
+          b.serviceName.toLowerCase().includes(term)
+        );
       }
       return true;
     })
@@ -95,19 +139,19 @@ export default function BookingTable() {
           </TableHeader>
           <TableBody>
             {filtered.map((booking) => (
-              <TableRow key={booking.id} className="hover:bg-muted/20">
+              <TableRow key={booking._id} className="hover:bg-muted/20">
                 <TableCell className="text-sm">{booking.date}</TableCell>
                 <TableCell className="text-sm text-muted-foreground">
                   {booking.startTime} - {booking.endTime}
                 </TableCell>
                 <TableCell className="text-sm font-medium">
-                  {getCustomerName(booking.customerId)}
+                  {booking.customerName}
                 </TableCell>
-                <TableCell className="text-sm">{getServiceName(booking.serviceId)}</TableCell>
+                <TableCell className="text-sm">{booking.serviceName}</TableCell>
                 <TableCell className="text-sm text-muted-foreground">
-                  {getStylistName(booking.stylistId)}
+                  {booking.stylistName}
                 </TableCell>
-                <TableCell className="text-sm">RM {getServicePrice(booking.serviceId)}</TableCell>
+                <TableCell className="text-sm">RM {booking.servicePrice}</TableCell>
                 <TableCell>
                   <BookingStatusBadge status={booking.status} />
                 </TableCell>

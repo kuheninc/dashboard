@@ -2,11 +2,14 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { revenueTrendData } from "@/lib/mock-data";
 import { format, parseISO } from "date-fns";
 
-export default function RevenueChart() {
-  const data = revenueTrendData.map((d) => ({
+interface RevenueChartProps {
+  data: { date: string; value: number }[];
+}
+
+export default function RevenueChart({ data: rawData }: RevenueChartProps) {
+  const data = rawData.map((d) => ({
     ...d,
     label: format(parseISO(d.date), "MMM d"),
   }));

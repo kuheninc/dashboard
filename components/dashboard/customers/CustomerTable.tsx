@@ -10,18 +10,19 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { mockCustomers } from "@/lib/mock-data";
 import { Search, AlertTriangle } from "lucide-react";
+import type { Doc, Id } from "@/convex/_generated/dataModel";
 
 interface CustomerTableProps {
-  onSelectCustomer?: (customerId: string) => void;
-  selectedCustomerId?: string | null;
+  customers: Doc<"customers">[];
+  onSelectCustomer?: (customerId: Id<"customers">) => void;
+  selectedCustomerId?: Id<"customers"> | null;
 }
 
-export default function CustomerTable({ onSelectCustomer, selectedCustomerId }: CustomerTableProps) {
+export default function CustomerTable({ customers, onSelectCustomer, selectedCustomerId }: CustomerTableProps) {
   const [search, setSearch] = useState("");
 
-  const filtered = mockCustomers.filter((c) => {
+  const filtered = customers.filter((c) => {
     if (!search) return true;
     return (
       c.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -58,11 +59,11 @@ export default function CustomerTable({ onSelectCustomer, selectedCustomerId }: 
           <TableBody>
             {filtered.map((customer) => (
               <TableRow
-                key={customer.id}
+                key={customer._id}
                 className={`cursor-pointer transition-colors ${
-                  selectedCustomerId === customer.id ? "bg-primary/5" : "hover:bg-muted/20"
+                  selectedCustomerId === customer._id ? "bg-primary/5" : "hover:bg-muted/20"
                 }`}
-                onClick={() => onSelectCustomer?.(customer.id)}
+                onClick={() => onSelectCustomer?.(customer._id)}
               >
                 <TableCell className="text-sm font-medium">
                   <div className="flex items-center gap-2">

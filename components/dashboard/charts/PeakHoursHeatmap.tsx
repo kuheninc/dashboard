@@ -2,7 +2,6 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { peakHoursData } from "@/lib/mock-data";
 
 const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const hours = Array.from({ length: 12 }, (_, i) => i + 9); // 9 AM to 8 PM
@@ -16,7 +15,11 @@ function getIntensity(count: number): string {
   return "bg-blue-500";
 }
 
-export default function PeakHoursHeatmap() {
+interface PeakHoursHeatmapProps {
+  data: { day: number; hour: number; count: number }[];
+}
+
+export default function PeakHoursHeatmap({ data }: PeakHoursHeatmapProps) {
   return (
     <Card className="shadow-sm border-border/60">
       <CardHeader className="pb-2">
@@ -42,7 +45,7 @@ export default function PeakHoursHeatmap() {
                 <div className="w-10 text-[11px] text-muted-foreground font-medium">{day}</div>
                 <div className="flex-1 flex gap-0.5">
                   {hours.map((hour) => {
-                    const cell = peakHoursData.find(
+                    const cell = data.find(
                       (c) => c.day === dayIndex && c.hour === hour
                     );
                     return (

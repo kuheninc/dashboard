@@ -1,18 +1,25 @@
 "use client";
 
+import { useMemo } from "react";
+import { useDashboard } from "@/lib/dashboard-context";
 import StatCard from "@/components/dashboard/StatCard";
 import ServiceCard from "@/components/dashboard/services/ServiceCard";
-import { mockServices } from "@/lib/mock-data";
 import { Scissors, DollarSign, Clock } from "lucide-react";
 
 export default function ServicesPage() {
-  const activeServices = mockServices.filter((s) => s.isActive);
-  const avgPrice = Math.round(
-    activeServices.reduce((sum, s) => sum + s.priceRM, 0) / activeServices.length
-  );
-  const avgDuration = Math.round(
-    activeServices.reduce((sum, s) => sum + s.durationMinutes, 0) / activeServices.length
-  );
+  const { services } = useDashboard();
+
+  const { activeServices, inactiveServices, avgPrice, avgDuration } = useMemo(() => {
+    const active = services.filter((s) => s.isActive);
+    const inactive = services.filter((s) => !s.isActive);
+    const price = active.length > 0
+      ? Math.round(active.reduce((sum, s) => sum + s.priceRM, 0) / active.length)
+      : 0;
+    const duration = active.length > 0
+      ? Math.round(active.reduce((sum, s) => sum + s.durationMinutes, 0) / active.length)
+      : 0;
+    return { activeServices: active, inactiveServices: inactive, avgPrice: price, avgDuration: duration };
+  }, [services]);
 
   return (
     <div className="space-y-6 max-w-[1400px]">
@@ -45,26 +52,24 @@ export default function ServicesPage() {
         />
       </div>
 
-      {/* Service cards */}
+      {/* Active service cards */}
       <div>
         <h2 className="text-sm font-semibold text-foreground mb-3">Active Services</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {activeServices.map((service) => (
-            <ServiceCard key={service.id} service={service} />
+            <ServiceCard key={service._id} service={service} />
           ))}
         </div>
       </div>
 
       {/* Inactive services */}
-      {mockServices.some((s) => !s.isActive) && (
+      {inactiveServices.length > 0 && (
         <div>
           <h2 className="text-sm font-semibold text-muted-foreground mb-3">Inactive Services</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {mockServices
-              .filter((s) => !s.isActive)
-              .map((service) => (
-                <ServiceCard key={service.id} service={service} />
-              ))}
+            {inactiveServices.map((service) => (
+              <ServiceCard key={service._id} service={service} />
+            ))}
           </div>
         </div>
       )}

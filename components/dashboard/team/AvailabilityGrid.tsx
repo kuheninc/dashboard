@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { mockStylists } from "@/lib/mock-data";
+import type { Doc } from "@/convex/_generated/dataModel";
 
 const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const COLORS = [
@@ -12,7 +12,11 @@ const COLORS = [
   "bg-amber-200 border-amber-300",
 ];
 
-export default function AvailabilityGrid() {
+interface AvailabilityGridProps {
+  stylists: Doc<"stylists">[];
+}
+
+export default function AvailabilityGrid({ stylists }: AvailabilityGridProps) {
   return (
     <Card className="shadow-sm border-border/60">
       <CardHeader className="pb-3">
@@ -33,8 +37,8 @@ export default function AvailabilityGrid() {
             </div>
 
             {/* Stylist rows */}
-            {mockStylists.map((stylist, i) => (
-              <div key={stylist.id} className="grid grid-cols-8 gap-1 mb-1.5">
+            {stylists.map((stylist, i) => (
+              <div key={stylist._id} className="grid grid-cols-8 gap-1 mb-1.5">
                 <div className="text-xs font-medium text-foreground flex items-center">{stylist.name}</div>
                 {days.map((_, dayIndex) => {
                   const avail = stylist.availability.find((a) => a.day === dayIndex);
@@ -62,8 +66,8 @@ export default function AvailabilityGrid() {
 
             {/* Legend */}
             <div className="flex flex-wrap gap-3 mt-4 pt-3 border-t border-border/40">
-              {mockStylists.map((stylist, i) => (
-                <div key={stylist.id} className="flex items-center gap-1.5">
+              {stylists.map((stylist, i) => (
+                <div key={stylist._id} className="flex items-center gap-1.5">
                   <div className={cn("w-3 h-3 rounded-sm", COLORS[i % COLORS.length].split(" ")[0])} />
                   <span className="text-[11px] text-muted-foreground">{stylist.name}</span>
                 </div>

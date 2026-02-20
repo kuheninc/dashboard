@@ -2,11 +2,14 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
-import { customerRetentionData } from "@/lib/mock-data";
 
 const COLORS = ["hsl(220, 100%, 50%)", "hsl(220, 60%, 78%)"];
 
-export default function CustomerRetentionChart() {
+interface CustomerRetentionChartProps {
+  data: { name: string; value: number }[];
+}
+
+export default function CustomerRetentionChart({ data }: CustomerRetentionChartProps) {
   return (
     <Card className="shadow-sm border-border/60">
       <CardHeader className="pb-2">
@@ -18,7 +21,7 @@ export default function CustomerRetentionChart() {
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
-                data={customerRetentionData}
+                data={data}
                 cx="50%"
                 cy="45%"
                 innerRadius={60}
@@ -27,7 +30,7 @@ export default function CustomerRetentionChart() {
                 dataKey="value"
                 strokeWidth={0}
               >
-                {customerRetentionData.map((_, index) => (
+                {data.map((_, index) => (
                   <Cell key={index} fill={COLORS[index]} />
                 ))}
               </Pie>

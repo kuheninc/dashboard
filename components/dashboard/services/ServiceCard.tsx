@@ -1,9 +1,9 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Clock, DollarSign } from "lucide-react";
-import type { MockService } from "@/lib/mock-data";
+import type { Doc } from "@/convex/_generated/dataModel";
 
-export default function ServiceCard({ service }: { service: MockService }) {
+export default function ServiceCard({ service }: { service: Doc<"services"> }) {
   return (
     <Card className="shadow-sm border-border/60 hover:shadow-md transition-shadow">
       <CardContent className="p-5">

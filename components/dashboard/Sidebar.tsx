@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { useDashboard } from "@/lib/dashboard-context";
 import {
   LayoutDashboard,
   CalendarDays,
@@ -30,6 +31,7 @@ interface SidebarProps {
 
 export default function Sidebar({ open, onClose }: SidebarProps) {
   const pathname = usePathname();
+  const { salon } = useDashboard();
 
   return (
     <>
@@ -53,7 +55,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
             <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
               <Scissors className="w-4 h-4 text-primary-foreground" />
             </div>
-            <span className="font-semibold text-[15px] text-foreground">Glow Studio</span>
+            <span className="font-semibold text-[15px] text-foreground truncate">{salon.name}</span>
           </div>
           <button onClick={onClose} className="lg:hidden p-1 hover:bg-muted rounded-md">
             <X className="w-5 h-5 text-muted-foreground" />
@@ -96,7 +98,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-xs font-medium text-foreground">WhatsApp Bot</p>
-              <p className="text-[11px] text-muted-foreground">Active &middot; 24 msgs today</p>
+              <p className="text-[11px] text-muted-foreground">Active</p>
             </div>
           </div>
         </div>

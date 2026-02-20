@@ -2,14 +2,18 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Phone, Calendar, CheckCircle2 } from "lucide-react";
-import type { MockStylist } from "@/lib/mock-data";
-import { stylistPerformanceData } from "@/lib/mock-data";
+import type { Doc } from "@/convex/_generated/dataModel";
 
-export default function StylistCard({ stylist }: { stylist: MockStylist }) {
-  const perf = stylistPerformanceData.find((p) => p.name === stylist.name);
-  const completionRate = perf
-    ? Math.round((perf.completed / perf.bookings) * 100)
-    : 0;
+interface StylistCardProps {
+  stylist: Doc<"stylists">;
+  stats?: { bookings: number; completed: number; noShows: number };
+}
+
+export default function StylistCard({ stylist, stats }: StylistCardProps) {
+  const completionRate =
+    stats && stats.bookings > 0
+      ? Math.round((stats.completed / stats.bookings) * 100)
+      : 0;
 
   return (
     <Card className="shadow-sm border-border/60 hover:shadow-md transition-shadow">
@@ -34,10 +38,12 @@ export default function StylistCard({ stylist }: { stylist: MockStylist }) {
                 {stylist.isActive ? "Active" : "Inactive"}
               </Badge>
             </div>
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1">
-              <Phone className="w-3 h-3" />
-              <span className="font-mono">+{stylist.phone}</span>
-            </div>
+            {stylist.phone && (
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1">
+                <Phone className="w-3 h-3" />
+                <span className="font-mono">+{stylist.phone}</span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -46,7 +52,7 @@ export default function StylistCard({ stylist }: { stylist: MockStylist }) {
           <div className="p-2 rounded-lg bg-muted/30 text-center">
             <div className="flex items-center justify-center gap-1">
               <Calendar className="w-3 h-3 text-primary" />
-              <span className="text-sm font-bold text-foreground">{perf?.bookings ?? 0}</span>
+              <span className="text-sm font-bold text-foreground">{stats?.bookings ?? 0}</span>
             </div>
             <p className="text-[10px] text-muted-foreground mt-0.5">Bookings</p>
           </div>

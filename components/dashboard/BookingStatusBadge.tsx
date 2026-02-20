@@ -1,6 +1,15 @@
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import type { BookingStatus } from "@/lib/mock-data";
+
+export type BookingStatus =
+  | "pending_approval"
+  | "confirmed"
+  | "reminder_sent"
+  | "customer_confirmed"
+  | "completed"
+  | "no_show"
+  | "cancelled_customer"
+  | "cancelled_admin";
 
 const statusConfig: Record<BookingStatus, { label: string; className: string }> = {
   pending_approval: { label: "Pending", className: "bg-amber-100 text-amber-700 border-amber-200" },
@@ -13,8 +22,8 @@ const statusConfig: Record<BookingStatus, { label: string; className: string }> 
   cancelled_admin: { label: "Cancelled", className: "bg-gray-100 text-gray-600 border-gray-200" },
 };
 
-export default function BookingStatusBadge({ status }: { status: BookingStatus }) {
-  const config = statusConfig[status];
+export default function BookingStatusBadge({ status }: { status: string }) {
+  const config = statusConfig[status as BookingStatus] ?? { label: status, className: "bg-gray-100 text-gray-600 border-gray-200" };
   return (
     <Badge variant="outline" className={cn("text-[11px] font-medium px-2 py-0.5", config.className)}>
       {config.label}

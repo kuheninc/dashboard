@@ -2,7 +2,6 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
-import { servicePopularityData } from "@/lib/mock-data";
 
 const COLORS = [
   "hsl(220, 100%, 50%)",
@@ -12,7 +11,11 @@ const COLORS = [
   "hsl(220, 25%, 82%)",
 ];
 
-export default function ServicePopularityChart() {
+interface ServicePopularityChartProps {
+  data: { name: string; bookings: number }[];
+}
+
+export default function ServicePopularityChart({ data }: ServicePopularityChartProps) {
   return (
     <Card className="shadow-sm border-border/60">
       <CardHeader className="pb-2">
@@ -23,7 +26,7 @@ export default function ServicePopularityChart() {
         <div className="h-[260px]">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
-              data={servicePopularityData}
+              data={data}
               layout="vertical"
               margin={{ top: 0, right: 10, bottom: 0, left: 0 }}
             >
@@ -51,7 +54,7 @@ export default function ServicePopularityChart() {
                 }}
               />
               <Bar dataKey="bookings" radius={[0, 6, 6, 0]} barSize={22}>
-                {servicePopularityData.map((_, index) => (
+                {data.map((_, index) => (
                   <Cell key={index} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Bar>

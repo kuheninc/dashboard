@@ -2,9 +2,12 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts";
-import { stylistPerformanceData } from "@/lib/mock-data";
 
-export default function StylistPerformanceChart() {
+interface StylistPerformanceChartProps {
+  data: { name: string; bookings: number; completed: number; noShows: number }[];
+}
+
+export default function StylistPerformanceChart({ data }: StylistPerformanceChartProps) {
   return (
     <Card className="shadow-sm border-border/60">
       <CardHeader className="pb-2">
@@ -14,7 +17,7 @@ export default function StylistPerformanceChart() {
       <CardContent className="pt-2">
         <div className="h-[260px]">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={stylistPerformanceData} margin={{ top: 5, right: 10, bottom: 0, left: -10 }}>
+            <BarChart data={data} margin={{ top: 5, right: 10, bottom: 0, left: -10 }}>
               <XAxis
                 dataKey="name"
                 tick={{ fontSize: 12, fill: "hsl(220, 9%, 46%)" }}

@@ -1,9 +1,13 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertTriangle } from "lucide-react";
-import { mockCustomers } from "@/lib/mock-data";
+import type { Doc } from "@/convex/_generated/dataModel";
 
-export default function NoShowAlerts() {
-  const offenders = mockCustomers
+interface NoShowAlertsProps {
+  customers: Doc<"customers">[];
+}
+
+export default function NoShowAlerts({ customers }: NoShowAlertsProps) {
+  const offenders = customers
     .filter((c) => c.noShowCount >= 2)
     .sort((a, b) => b.noShowCount - a.noShowCount);
 
@@ -21,7 +25,7 @@ export default function NoShowAlerts() {
         ) : (
           offenders.map((customer) => (
             <div
-              key={customer.id}
+              key={customer._id}
               className="flex items-center justify-between p-2.5 rounded-lg bg-amber-50/50 border border-amber-100"
             >
               <div>

@@ -3,12 +3,14 @@
 import { Bell, Search, Menu } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { useDashboard } from "@/lib/dashboard-context";
 
 interface HeaderProps {
   onMenuClick: () => void;
 }
 
 export default function Header({ onMenuClick }: HeaderProps) {
+  const { salon } = useDashboard();
   return (
     <header className="sticky top-0 z-30 h-16 bg-white border-b border-border flex items-center justify-between px-6">
       {/* Left: hamburger + search */}
@@ -49,7 +51,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
           </Avatar>
           <div className="hidden md:block">
             <p className="text-sm font-medium text-foreground leading-none">Admin</p>
-            <p className="text-[11px] text-muted-foreground mt-0.5">Glow Studio KL</p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">{salon.name}</p>
           </div>
         </div>
       </div>
