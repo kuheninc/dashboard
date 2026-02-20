@@ -5,10 +5,6 @@ import { ConvexClientProvider } from "./providers";
 export const metadata: Metadata = {
   title: "Cadence",
   description: "Salon management dashboard by Cadence",
-  icons: {
-    icon: "/icon.svg",
-    apple: "/apple-icon.svg",
-  },
 };
 
 export default function RootLayout({
