@@ -8,7 +8,14 @@ export const create = mutation({
     waPhoneNumberId: v.string(),
     waBusinessAccountId: v.string(),
     waAccessToken: v.string(),
-    adminPhones: v.array(v.string()),
+    admins: v.array(
+      v.object({
+        username: v.string(),
+        passwordHash: v.string(),
+        phone: v.string(),
+        role: v.union(v.literal("owner"), v.literal("admin")),
+      })
+    ),
     address: v.string(),
     googleMapsLink: v.optional(v.string()),
     openingHours: v.array(
@@ -24,8 +31,21 @@ export const create = mutation({
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
+    const { admins, ...rest } = args;
+
+    // Check for duplicate usernames within this salon
+    const usernames = admins.map((a) => a.username.toLowerCase());
+    if (new Set(usernames).size !== usernames.length) {
+      throw new Error("Each admin must have a unique username");
+    }
+
+    // Derive adminPhones from admins for backward compatibility
+    const adminPhones = admins.map((a) => a.phone);
+
     return await ctx.db.insert("salons", {
-      ...args,
+      ...rest,
+      admins,
+      adminPhones,
       ownerId: userId ?? undefined,
       isActive: true,
     });

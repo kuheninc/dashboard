@@ -26,6 +26,13 @@ export interface StylistEntry {
   availability: StylistAvailability[];
 }
 
+export interface AdminEntry {
+  username: string;
+  password: string;
+  phone: string;
+  role: "owner" | "admin";
+}
+
 export interface OnboardingFormData {
   // Step 1: Salon details
   name: string;
@@ -34,7 +41,7 @@ export interface OnboardingFormData {
   waPhoneNumberId: string;
   waBusinessAccountId: string;
   waAccessToken: string;
-  adminPhones: string[];
+  admins: AdminEntry[];
   timezone: string;
 
   // Step 2: Opening hours
@@ -74,7 +81,7 @@ export const INITIAL_FORM_DATA: OnboardingFormData = {
   waPhoneNumberId: "",
   waBusinessAccountId: "",
   waAccessToken: "",
-  adminPhones: [""],
+  admins: [{ username: "", password: "", phone: "", role: "owner" }],
   timezone: "Asia/Kuala_Lumpur",
   openingHours: DEFAULT_OPENING_HOURS,
   services: [{ name: "", nameBM: "", durationMinutes: 30, priceRM: 0 }],

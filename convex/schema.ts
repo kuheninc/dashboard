@@ -12,6 +12,16 @@ export default defineSchema({
     waBusinessAccountId: v.string(),
     waAccessToken: v.string(),
     adminPhones: v.array(v.string()),
+    admins: v.optional(
+      v.array(
+        v.object({
+          username: v.string(),
+          passwordHash: v.string(),
+          phone: v.string(),
+          role: v.union(v.literal("owner"), v.literal("admin")),
+        })
+      )
+    ),
     address: v.string(),
     googleMapsLink: v.optional(v.string()),
     openingHours: v.array(

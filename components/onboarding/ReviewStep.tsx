@@ -23,10 +23,39 @@ export default function ReviewStep({ data }: Props) {
               <span className="text-foreground truncate">{data.googleMapsLink}</span>
             </>
           )}
-          <span className="text-muted-foreground">Admins</span>
-          <span className="text-foreground font-mono text-[12px]">
-            {data.adminPhones.filter(Boolean).join(", ")}
-          </span>
+        </div>
+      </div>
+
+      {/* Admin Accounts */}
+      <div className="p-4 bg-background border border-border rounded-xl space-y-3">
+        <h3 className="font-display text-[15px] text-foreground">
+          Admin Accounts ({data.admins.filter((a) => a.username).length})
+        </h3>
+        <div className="space-y-2">
+          {data.admins
+            .filter((a) => a.username)
+            .map((a, i) => (
+              <div
+                key={i}
+                className="flex items-center justify-between text-[13px]"
+              >
+                <div>
+                  <span className="font-medium text-foreground">{a.username}</span>
+                  <span className="text-muted-foreground ml-2 font-mono text-[12px]">
+                    {a.phone}
+                  </span>
+                </div>
+                <span
+                  className={`px-2 py-0.5 rounded-md text-[11px] font-medium ${
+                    a.role === "owner"
+                      ? "bg-[rgba(209,183,153,0.15)] text-[#a68b6b]"
+                      : "bg-secondary text-muted-foreground"
+                  }`}
+                >
+                  {a.role}
+                </span>
+              </div>
+            ))}
         </div>
       </div>
 

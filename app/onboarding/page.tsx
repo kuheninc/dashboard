@@ -47,15 +47,22 @@ export default function OnboardingPage() {
 
   const canProceed = (): boolean => {
     switch (step) {
-      case 0:
+      case 0: {
+        const hasValidAdmin = data.admins.some(
+          (a) =>
+            a.username.trim() &&
+            a.password.length >= 6 &&
+            a.phone.trim()
+        );
         return !!(
           data.name &&
           data.address &&
           data.waPhoneNumberId &&
           data.waBusinessAccountId &&
           data.waAccessToken &&
-          data.adminPhones.some(Boolean)
+          hasValidAdmin
         );
+      }
       case 1:
         return true;
       case 2:
@@ -69,11 +76,42 @@ export default function OnboardingPage() {
     }
   };
 
+  const hashPassword = async (password: string): Promise<string> => {
+    const encoder = new TextEncoder();
+    const hashBuffer = await crypto.subtle.digest(
+      "SHA-256",
+      encoder.encode(password)
+    );
+    return Array.from(new Uint8Array(hashBuffer))
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+  };
+
   const handleSubmit = async () => {
     setSubmitting(true);
     setError(null);
 
     try {
+      const validAdmins = data.admins.filter(
+        (a) => a.username.trim() && a.password && a.phone.trim()
+      );
+
+      // Check unique usernames
+      const usernames = validAdmins.map((a) => a.username.toLowerCase());
+      if (new Set(usernames).size !== usernames.length) {
+        throw new Error("Each admin must have a unique username");
+      }
+
+      // Hash passwords before sending
+      const adminsWithHash = await Promise.all(
+        validAdmins.map(async (a) => ({
+          username: a.username.trim(),
+          passwordHash: await hashPassword(a.password),
+          phone: a.phone.trim(),
+          role: a.role,
+        }))
+      );
+
       const salonId = await createSalon({
         name: data.name,
         address: data.address,
@@ -81,7 +119,7 @@ export default function OnboardingPage() {
         waPhoneNumberId: data.waPhoneNumberId,
         waBusinessAccountId: data.waBusinessAccountId,
         waAccessToken: data.waAccessToken,
-        adminPhones: data.adminPhones.filter(Boolean),
+        admins: adminsWithHash,
         openingHours: data.openingHours,
         closedDates: [],
         timezone: data.timezone,
