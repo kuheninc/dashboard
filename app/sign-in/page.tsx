@@ -20,7 +20,7 @@ function CadenceIcon({ className }: { className?: string }) {
   );
 }
 
-type Mode = "signIn" | "signUp" | "forgotPassword" | "resetSent";
+type Mode = "signIn" | "forgotPassword" | "resetSent";
 
 export default function SignInPage() {
   const { signIn } = useAuthActions();
@@ -30,7 +30,6 @@ export default function SignInPage() {
   const [mode, setMode] = useState<Mode>("signIn");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -64,11 +63,6 @@ export default function SignInPage() {
       return;
     }
 
-    if (mode === "signUp" && password !== confirmPassword) {
-      setError("Passwords don't match");
-      return;
-    }
-
     if (password.length < 8) {
       setError("Password must be at least 8 characters");
       return;
@@ -79,14 +73,10 @@ export default function SignInPage() {
       await signIn("password", {
         email,
         password,
-        flow: mode === "signUp" ? "signUp" : "signIn",
+        flow: "signIn",
       });
     } catch (err) {
-      if (mode === "signUp") {
-        setError("Could not create account. This email may already be registered.");
-      } else {
-        setError("Invalid email or password. Please try again.");
-      }
+      setError("Invalid email or password. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -96,19 +86,16 @@ export default function SignInPage() {
     setMode(newMode);
     setError("");
     setPassword("");
-    setConfirmPassword("");
   }
 
   const title = {
     signIn: "Welcome back",
-    signUp: "Create your account",
     forgotPassword: "Reset your password",
     resetSent: "Check your inbox",
   }[mode];
 
   const subtitle = {
     signIn: "Sign in to manage your salon",
-    signUp: "Get started with Cadence in minutes",
     forgotPassword: "We'll send you a link to get back in",
     resetSent: `We've sent a reset link to ${email}`,
   }[mode];
@@ -182,7 +169,7 @@ export default function SignInPage() {
                 onClick={() => switchMode("signIn")}
                 className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-[13px] font-medium text-[#f2ebe0] bg-[rgba(242,235,224,0.06)] hover:bg-[rgba(242,235,224,0.1)] transition-colors"
               >
-                Back to sign in
+                I remember now, take me back
               </button>
             </div>
           ) : (
@@ -232,36 +219,6 @@ export default function SignInPage() {
                 </div>
               )}
 
-              {/* Confirm password (sign up only) */}
-              {mode === "signUp" && (
-                <div>
-                  <label className="block text-[11px] font-medium text-[rgba(242,235,224,0.4)] uppercase tracking-[0.04em] mb-2">
-                    Confirm password
-                  </label>
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="Type it again"
-                    required
-                    className="w-full px-4 py-3 rounded-xl bg-[rgba(242,235,224,0.06)] border border-[rgba(242,235,224,0.08)] text-[14px] text-[#f2ebe0] placeholder:text-[rgba(242,235,224,0.25)] focus:outline-none focus:border-[#a68b6b] focus:ring-1 focus:ring-[#a68b6b] transition-colors"
-                  />
-                </div>
-              )}
-
-              {/* Forgot password link (sign in only) */}
-              {mode === "signIn" && (
-                <div className="flex justify-end">
-                  <button
-                    type="button"
-                    onClick={() => switchMode("forgotPassword")}
-                    className="text-[12px] text-[#c4a67e] hover:text-[#d1b799] transition-colors"
-                  >
-                    Forgot your password?
-                  </button>
-                </div>
-              )}
-
               {/* Error */}
               {error && (
                 <div className="p-3 rounded-xl bg-[rgba(196,90,90,0.12)] border border-[rgba(196,90,90,0.25)]">
@@ -279,9 +236,8 @@ export default function SignInPage() {
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
                   <>
-                    {mode === "signIn" && "Sign in"}
-                    {mode === "signUp" && "Create account"}
-                    {mode === "forgotPassword" && "Send reset link"}
+                    {mode === "signIn" && "Take me to my salon"}
+                    {mode === "forgotPassword" && "Help me get back in"}
                     <ArrowRight className="w-4 h-4" />
                   </>
                 )}
@@ -292,24 +248,12 @@ export default function SignInPage() {
           {/* Mode switcher */}
           <div className="mt-8 pt-6 border-t border-[rgba(242,235,224,0.06)]">
             {(mode === "signIn" || mode === "resetSent") && (
-              <div className="space-y-3">
-                <button
-                  onClick={() => switchMode("signUp")}
-                  className="w-full text-center text-[13px] text-[rgba(242,235,224,0.5)] hover:text-[rgba(242,235,224,0.75)] transition-colors"
-                >
-                  Don't have an account?{" "}
-                  <span className="text-[#c4a67e] font-medium">Sign up</span>
-                </button>
-              </div>
-            )}
-
-            {mode === "signUp" && (
               <button
-                onClick={() => switchMode("signIn")}
+                onClick={() => switchMode("forgotPassword")}
                 className="w-full text-center text-[13px] text-[rgba(242,235,224,0.5)] hover:text-[rgba(242,235,224,0.75)] transition-colors"
               >
-                Already have an account?{" "}
-                <span className="text-[#c4a67e] font-medium">Sign in</span>
+                Can't remember your password?{" "}
+                <span className="text-[#c4a67e] font-medium">Reset it</span>
               </button>
             )}
 
@@ -318,23 +262,23 @@ export default function SignInPage() {
                 onClick={() => switchMode("signIn")}
                 className="w-full text-center text-[13px] text-[rgba(242,235,224,0.5)] hover:text-[rgba(242,235,224,0.75)] transition-colors"
               >
-                Remember it?{" "}
-                <span className="text-[#c4a67e] font-medium">Sign in</span>
+                Wait, I remember now —{" "}
+                <span className="text-[#c4a67e] font-medium">take me back</span>
               </button>
             )}
           </div>
 
           {/* Onboarding CTA */}
-          {(mode === "signIn" || mode === "signUp") && (
+          {mode === "signIn" && (
             <div className="mt-6 p-4 rounded-xl bg-[rgba(209,183,153,0.06)] border border-[rgba(209,183,153,0.1)]">
               <p className="text-[13px] text-[rgba(242,235,224,0.5)] mb-2.5">
-                Just getting started with Cadence?
+                New here? Let's get you set up.
               </p>
               <button
                 onClick={() => router.push("/onboarding")}
                 className="flex items-center gap-2 text-[13px] font-medium text-[#c4a67e] hover:text-[#d1b799] transition-colors"
               >
-                Set up your salon
+                Set up my salon
                 <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </div>
