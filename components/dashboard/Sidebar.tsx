@@ -14,7 +14,10 @@ import {
   MessageCircle,
   Settings,
   X,
+  LogOut,
 } from "lucide-react";
+import { useAuthActions } from "@convex-dev/auth/react";
+import { useRouter } from "next/navigation";
 
 function CadenceIcon({ className }: { className?: string }) {
   return (
@@ -51,6 +54,8 @@ interface SidebarProps {
 export default function Sidebar({ open, onClose }: SidebarProps) {
   const pathname = usePathname();
   const { salon } = useDashboard();
+  const { signOut } = useAuthActions();
+  const router = useRouter();
 
   const initials = salon.name
     .split(" ")
@@ -160,7 +165,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
           <div className="w-7 h-7 rounded-md bg-gradient-to-br from-[#a68b6b] to-[#8a7055] flex items-center justify-center text-[11px] font-semibold text-[#f2ebe0] flex-shrink-0">
             {initials}
           </div>
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <div className="text-[12px] font-medium text-[#f2ebe0] truncate">
               {salon.name}
             </div>
@@ -168,6 +173,16 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
               Owner
             </div>
           </div>
+          <button
+            onClick={async () => {
+              await signOut();
+              router.replace("/sign-in");
+            }}
+            className="p-1.5 rounded-md hover:bg-[#2a2430] transition-colors"
+            title="Sign out"
+          >
+            <LogOut className="w-3.5 h-3.5 text-[rgba(242,235,224,0.4)] hover:text-[rgba(242,235,224,0.7)]" />
+          </button>
         </div>
       </aside>
     </>

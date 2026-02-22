@@ -1,9 +1,13 @@
 import { defineSchema, defineTable } from "convex/server";
+import { authTables } from "@convex-dev/auth/server";
 import { v } from "convex/values";
 
 export default defineSchema({
+  ...authTables,
+
   salons: defineTable({
     name: v.string(),
+    ownerId: v.optional(v.id("users")),
     waPhoneNumberId: v.string(),
     waBusinessAccountId: v.string(),
     waAccessToken: v.string(),
@@ -25,7 +29,8 @@ export default defineSchema({
     isActive: v.boolean(),
   })
     .index("by_waPhoneNumberId", ["waPhoneNumberId"])
-    .index("by_isActive", ["isActive"]),
+    .index("by_isActive", ["isActive"])
+    .index("by_ownerId", ["ownerId"]),
 
   stylists: defineTable({
     salonId: v.id("salons"),

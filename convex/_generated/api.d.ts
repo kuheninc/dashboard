@@ -11,6 +11,7 @@
 import type * as ai_prompts from "../ai/prompts.js";
 import type * as ai_router from "../ai/router.js";
 import type * as ai_tools from "../ai/tools.js";
+import type * as auth from "../auth.js";
 import type * as bookings_internal from "../bookings/internal.js";
 import type * as bookings_mutations from "../bookings/mutations.js";
 import type * as bookings_queries from "../bookings/queries.js";
@@ -54,6 +55,7 @@ declare const fullApi: ApiFromModules<{
   "ai/prompts": typeof ai_prompts;
   "ai/router": typeof ai_router;
   "ai/tools": typeof ai_tools;
+  auth: typeof auth;
   "bookings/internal": typeof bookings_internal;
   "bookings/mutations": typeof bookings_mutations;
   "bookings/queries": typeof bookings_queries;

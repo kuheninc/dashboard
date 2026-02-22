@@ -1,4 +1,5 @@
 import { query } from "../_generated/server";
+import { getAuthUserId } from "@convex-dev/auth/server";
 import { v } from "convex/values";
 
 export const getById = query({
@@ -27,5 +28,18 @@ export const listActive = query({
       .query("salons")
       .withIndex("by_isActive", (q) => q.eq("isActive", true))
       .collect();
+  },
+});
+
+export const getMySalon = query({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return null;
+
+    return await ctx.db
+      .query("salons")
+      .withIndex("by_ownerId", (q) => q.eq("ownerId", userId))
+      .first();
   },
 });

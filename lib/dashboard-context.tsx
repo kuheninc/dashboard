@@ -26,8 +26,7 @@ export function useSalonId() {
 }
 
 export function DashboardProvider({ children }: { children: ReactNode }) {
-  const salons = useQuery(api.salons.queries.listActive);
-  const salon = salons?.[0];
+  const salon = useQuery(api.salons.queries.getMySalon);
   const salonId = salon?._id;
 
   const services = useQuery(
