@@ -1,13 +1,16 @@
 "use client";
 
-import { useQuery } from "convex/react";
+import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Check, X, Clock } from "lucide-react";
 import { useDashboard } from "@/lib/dashboard-context";
 import { enrichBookings } from "@/lib/dashboard-helpers";
+import type { Id } from "@/convex/_generated/dataModel";
 
 export default function PendingApprovals() {
-  const { salonId, customers, services, stylists } = useDashboard();
+  const { salonId, salon, customers, services, stylists } = useDashboard();
+  const approve = useMutation(api.bookings.mutations.approve);
+  const cancel = useMutation(api.bookings.mutations.cancel);
   const bookings = useQuery(api.bookings.queries.getPendingApproval, { salonId });
 
   // Still loading
@@ -77,6 +80,12 @@ export default function PendingApprovals() {
 
               <div className="flex gap-2">
                 <button
+                  onClick={() =>
+                    approve({
+                      bookingId: booking._id as Id<"bookings">,
+                      adminPhone: salon.adminPhones[0],
+                    })
+                  }
                   className="flex-1 h-8 text-[12px] font-medium rounded-lg inline-flex items-center justify-center transition-colors"
                   style={{
                     color: "#fff",
@@ -93,6 +102,12 @@ export default function PendingApprovals() {
                   Approve
                 </button>
                 <button
+                  onClick={() =>
+                    cancel({
+                      bookingId: booking._id as Id<"bookings">,
+                      cancelledBy: "cancelled_admin",
+                    })
+                  }
                   className="flex-1 h-8 text-[12px] font-medium rounded-lg inline-flex items-center justify-center border transition-colors"
                   style={{
                     color: "#c45a5a",

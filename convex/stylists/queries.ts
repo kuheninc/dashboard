@@ -12,3 +12,13 @@ export const listBySalon = query({
       .collect();
   },
 });
+
+export const listAllBySalon = query({
+  args: { salonId: v.id("salons") },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("stylists")
+      .withIndex("by_salon", (q) => q.eq("salonId", args.salonId))
+      .collect();
+  },
+});

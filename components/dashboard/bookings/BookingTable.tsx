@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { useQuery } from "convex/react";
+import { useState, useMemo, useRef, useEffect } from "react";
+import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
+import type { Id } from "@/convex/_generated/dataModel";
 import BookingStatusBadge from "@/components/dashboard/BookingStatusBadge";
 import { useDashboard } from "@/lib/dashboard-context";
 import { enrichBookings } from "@/lib/dashboard-helpers";
-import { Search, Filter } from "lucide-react";
+import { Search, Filter, MoreHorizontal, Check, X, AlertTriangle, CheckCircle2 } from "lucide-react";
 
 type BookingStatus =
   | "pending_approval"
@@ -17,6 +18,8 @@ type BookingStatus =
   | "no_show"
   | "cancelled_customer"
   | "cancelled_admin";
+
+const TERMINAL_STATUSES: BookingStatus[] = ["completed", "no_show", "cancelled_customer", "cancelled_admin"];
 
 const statusOptions: { label: string; value: BookingStatus | "all" }[] = [
   { label: "All", value: "all" },
@@ -66,6 +69,93 @@ function getAvatarColor(name: string): string {
     hash = name.charCodeAt(i) + ((hash << 5) - hash);
   }
   return avatarColors[Math.abs(hash) % avatarColors.length];
+}
+
+function ActionsDropdown({ bookingId, status }: { bookingId: Id<"bookings">; status: BookingStatus }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const { salon } = useDashboard();
+
+  const approveMut = useMutation(api.bookings.mutations.approve);
+  const cancelMut = useMutation(api.bookings.mutations.cancel);
+  const markCompletedMut = useMutation(api.bookings.mutations.markCompleted);
+  const markNoShowMut = useMutation(api.bookings.mutations.markNoShow);
+
+  useEffect(() => {
+    if (!open) return;
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [open]);
+
+  if (TERMINAL_STATUSES.includes(status)) return null;
+
+  const actions: { label: string; icon: React.ReactNode; onClick: () => void; color?: string }[] = [];
+
+  if (status === "pending_approval") {
+    actions.push({
+      label: "Approve",
+      icon: <Check className="w-3.5 h-3.5" />,
+      onClick: () => approveMut({ bookingId, adminPhone: salon.adminPhones[0] }),
+      color: "#5a9a6e",
+    });
+    actions.push({
+      label: "Decline",
+      icon: <X className="w-3.5 h-3.5" />,
+      onClick: () => cancelMut({ bookingId, cancelledBy: "cancelled_admin" }),
+      color: "#c45a5a",
+    });
+  } else {
+    actions.push({
+      label: "Mark Completed",
+      icon: <CheckCircle2 className="w-3.5 h-3.5" />,
+      onClick: () => markCompletedMut({ bookingId }),
+      color: "#5a9a6e",
+    });
+    actions.push({
+      label: "Mark No-Show",
+      icon: <AlertTriangle className="w-3.5 h-3.5" />,
+      onClick: () => markNoShowMut({ bookingId }),
+      color: "#c4983e",
+    });
+    actions.push({
+      label: "Cancel",
+      icon: <X className="w-3.5 h-3.5" />,
+      onClick: () => cancelMut({ bookingId, cancelledBy: "cancelled_admin" }),
+      color: "#c45a5a",
+    });
+  }
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen(!open)}
+        className="p-1.5 rounded-md hover:bg-[rgba(166,139,107,0.08)] transition-colors"
+      >
+        <MoreHorizontal className="w-4 h-4 text-[#9c9184]" />
+      </button>
+      {open && (
+        <div className="absolute right-0 top-full mt-1 z-20 bg-card border border-border rounded-lg shadow-lg py-1 min-w-[160px]">
+          {actions.map((action) => (
+            <button
+              key={action.label}
+              onClick={() => {
+                action.onClick();
+                setOpen(false);
+              }}
+              className="w-full flex items-center gap-2 px-3 py-2 text-[12px] font-medium hover:bg-[rgba(166,139,107,0.06)] transition-colors"
+              style={{ color: action.color }}
+            >
+              {action.icon}
+              {action.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default function BookingTable() {
@@ -144,7 +234,7 @@ export default function BookingTable() {
       {/* Table */}
       <div className="bg-card border border-border rounded-xl overflow-hidden transition-shadow hover:shadow-[0_2px_12px_rgba(42,36,32,0.06)]">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[640px]">
+          <table className="w-full min-w-[700px]">
             <thead>
               <tr className="bg-[rgba(166,139,107,0.05)]">
                 <th className="text-left font-label text-[#9c9184] px-4 lg:px-5 py-3">
@@ -168,6 +258,7 @@ export default function BookingTable() {
                 <th className="text-left font-label text-[#9c9184] px-4 lg:px-5 py-3">
                   Status
                 </th>
+                <th className="w-10 px-2 py-3" />
               </tr>
             </thead>
             <tbody>
@@ -212,11 +303,17 @@ export default function BookingTable() {
                   <td className="text-[13px] px-4 lg:px-5 py-3">
                     <BookingStatusBadge status={booking.status} />
                   </td>
+                  <td className="px-2 py-3">
+                    <ActionsDropdown
+                      bookingId={booking._id as Id<"bookings">}
+                      status={booking.status as BookingStatus}
+                    />
+                  </td>
                 </tr>
               ))}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="text-center py-12 text-[13px] text-[#9c9184]">
+                  <td colSpan={8} className="text-center py-12 text-[13px] text-[#9c9184]">
                     No bookings found
                   </td>
                 </tr>

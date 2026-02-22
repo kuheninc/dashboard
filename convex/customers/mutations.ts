@@ -37,6 +37,17 @@ export const update = mutation({
   },
 });
 
+export const toggleBlacklist = mutation({
+  args: { customerId: v.id("customers") },
+  handler: async (ctx, args) => {
+    const customer = await ctx.db.get(args.customerId);
+    if (!customer) throw new Error("Customer not found");
+    await ctx.db.patch(args.customerId, {
+      isBlacklisted: !customer.isBlacklisted,
+    });
+  },
+});
+
 export const incrementNoShow = mutation({
   args: { customerId: v.id("customers") },
   handler: async (ctx, args) => {

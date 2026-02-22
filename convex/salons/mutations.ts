@@ -66,6 +66,25 @@ export const updateWaToken = mutation({
   },
 });
 
+export const updateInfo = mutation({
+  args: {
+    salonId: v.id("salons"),
+    name: v.optional(v.string()),
+    address: v.optional(v.string()),
+    googleMapsLink: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const { salonId, ...fields } = args;
+    const updates: Record<string, unknown> = {};
+    for (const [key, val] of Object.entries(fields)) {
+      if (val !== undefined) updates[key] = val;
+    }
+    if (Object.keys(updates).length > 0) {
+      await ctx.db.patch(salonId, updates);
+    }
+  },
+});
+
 export const updateAdminPhones = mutation({
   args: {
     salonId: v.id("salons"),

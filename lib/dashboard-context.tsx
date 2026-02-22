@@ -35,7 +35,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     salonId ? { salonId } : "skip"
   );
   const stylists = useQuery(
-    api.stylists.queries.listBySalon,
+    api.stylists.queries.listAllBySalon,
     salonId ? { salonId } : "skip"
   );
   const customers = useQuery(

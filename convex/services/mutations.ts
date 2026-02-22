@@ -45,3 +45,10 @@ export const deactivate = mutation({
     await ctx.db.patch(args.serviceId, { isActive: false });
   },
 });
+
+export const reactivate = mutation({
+  args: { serviceId: v.id("services") },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.serviceId, { isActive: true });
+  },
+});

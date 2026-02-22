@@ -12,6 +12,7 @@ import {
   Sparkles,
   UserCog,
   MessageCircle,
+  Settings,
   X,
 } from "lucide-react";
 
@@ -39,6 +40,7 @@ const manageNav = [
   { label: "Services", href: "/dashboard/services", icon: Sparkles },
   { label: "Team", href: "/dashboard/team", icon: UserCog },
   { label: "Analytics", href: "/dashboard/analytics", icon: BarChart3 },
+  { label: "Settings", href: "/dashboard/settings", icon: Settings },
 ];
 
 interface SidebarProps {
