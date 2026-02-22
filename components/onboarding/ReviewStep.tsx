@@ -8,43 +8,40 @@ interface Props {
 
 export default function ReviewStep({ data }: Props) {
   return (
-    <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-gray-900">Review & Submit</h2>
-      <p className="text-sm text-gray-500">
-        Please review your salon details before submitting.
-      </p>
-
+    <div className="space-y-5">
       {/* Salon Details */}
-      <div className="p-4 bg-white border border-gray-200 rounded-lg space-y-2">
-        <h3 className="font-semibold text-gray-800">Salon Details</h3>
-        <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
-          <span className="text-gray-500">Name:</span>
-          <span>{data.name}</span>
-          <span className="text-gray-500">Address:</span>
-          <span>{data.address}</span>
+      <div className="p-4 bg-background border border-border rounded-xl space-y-3">
+        <h3 className="font-display text-[15px] text-foreground">Salon Details</h3>
+        <div className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-[13px]">
+          <span className="text-muted-foreground">Name</span>
+          <span className="text-foreground">{data.name}</span>
+          <span className="text-muted-foreground">Address</span>
+          <span className="text-foreground">{data.address}</span>
           {data.googleMapsLink && (
             <>
-              <span className="text-gray-500">Maps:</span>
-              <span className="truncate">{data.googleMapsLink}</span>
+              <span className="text-muted-foreground">Maps</span>
+              <span className="text-foreground truncate">{data.googleMapsLink}</span>
             </>
           )}
-          <span className="text-gray-500">Admin phones:</span>
-          <span>{data.adminPhones.filter(Boolean).join(", ")}</span>
+          <span className="text-muted-foreground">Admins</span>
+          <span className="text-foreground font-mono text-[12px]">
+            {data.adminPhones.filter(Boolean).join(", ")}
+          </span>
         </div>
       </div>
 
       {/* Opening Hours */}
-      <div className="p-4 bg-white border border-gray-200 rounded-lg space-y-2">
-        <h3 className="font-semibold text-gray-800">Opening Hours</h3>
-        <div className="text-sm space-y-1">
+      <div className="p-4 bg-background border border-border rounded-xl space-y-3">
+        <h3 className="font-display text-[15px] text-foreground">Opening Hours</h3>
+        <div className="space-y-1.5">
           {data.openingHours.map((h) => (
-            <div key={h.day} className="flex gap-2">
-              <span className="w-24 text-gray-500">{DAY_NAMES[h.day]}:</span>
-              <span>
+            <div key={h.day} className="flex gap-2 text-[13px]">
+              <span className="w-24 text-muted-foreground">{DAY_NAMES[h.day]}</span>
+              <span className="text-foreground">
                 {h.isClosed ? (
-                  <span className="text-gray-400">Closed</span>
+                  <span className="text-muted-foreground/60">Closed</span>
                 ) : (
-                  `${h.open} - ${h.close}`
+                  <span className="font-mono text-[12px]">{h.open} – {h.close}</span>
                 )}
               </span>
             </div>
@@ -53,37 +50,40 @@ export default function ReviewStep({ data }: Props) {
       </div>
 
       {/* Services */}
-      <div className="p-4 bg-white border border-gray-200 rounded-lg space-y-2">
-        <h3 className="font-semibold text-gray-800">
+      <div className="p-4 bg-background border border-border rounded-xl space-y-3">
+        <h3 className="font-display text-[15px] text-foreground">
           Services ({data.services.filter((s) => s.name).length})
         </h3>
-        <div className="text-sm space-y-1">
+        <div className="space-y-1.5">
           {data.services
             .filter((s) => s.name)
             .map((s, i) => (
-              <div key={i} className="flex justify-between">
-                <span>
+              <div key={i} className="flex justify-between text-[13px]">
+                <span className="text-foreground">
                   {s.name}
-                  {s.nameBM ? ` (${s.nameBM})` : ""} — {s.durationMinutes} min
+                  {s.nameBM ? ` (${s.nameBM})` : ""}{" "}
+                  <span className="text-muted-foreground">— {s.durationMinutes} min</span>
                 </span>
-                <span className="font-medium">RM{s.priceRM}</span>
+                <span className="font-mono text-[12px] font-medium text-foreground">
+                  RM{s.priceRM}
+                </span>
               </div>
             ))}
         </div>
       </div>
 
       {/* Stylists */}
-      <div className="p-4 bg-white border border-gray-200 rounded-lg space-y-2">
-        <h3 className="font-semibold text-gray-800">
+      <div className="p-4 bg-background border border-border rounded-xl space-y-3">
+        <h3 className="font-display text-[15px] text-foreground">
           Stylists ({data.stylists.filter((s) => s.name).length})
         </h3>
-        <div className="text-sm space-y-2">
+        <div className="space-y-2">
           {data.stylists
             .filter((s) => s.name)
             .map((s, i) => (
-              <div key={i}>
-                <span className="font-medium">{s.name}</span>
-                <span className="text-gray-400 ml-2">
+              <div key={i} className="text-[13px]">
+                <span className="font-medium text-foreground">{s.name}</span>
+                <span className="text-muted-foreground ml-2">
                   {s.availability.map((a) => DAY_NAMES[a.day].slice(0, 3)).join(", ")}
                 </span>
               </div>

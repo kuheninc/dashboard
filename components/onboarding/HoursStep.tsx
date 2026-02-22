@@ -20,60 +20,55 @@ export default function HoursStep({ data, onChange }: Props) {
   };
 
   return (
-    <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-gray-900">Opening Hours</h2>
-      <p className="text-sm text-gray-500">
-        Set your salon&apos;s operating hours for each day of the week.
-      </p>
-
-      <div className="space-y-3">
-        {data.openingHours.map((entry) => (
-          <div
-            key={entry.day}
-            className={`flex items-center gap-4 p-3 rounded-lg ${
-              entry.isClosed ? "bg-gray-50" : "bg-white border border-gray-200"
-            }`}
-          >
-            <div className="w-28 font-medium text-gray-700">
-              {DAY_NAMES[entry.day]}
-            </div>
-
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={entry.isClosed}
-                onChange={(e) =>
-                  updateHour(entry.day, "isClosed", e.target.checked)
-                }
-                className="rounded border-gray-300 text-green-600 focus:ring-green-500"
-              />
-              <span className="text-sm text-gray-600">Closed</span>
-            </label>
-
-            {!entry.isClosed && (
-              <>
-                <input
-                  type="time"
-                  value={entry.open}
-                  onChange={(e) =>
-                    updateHour(entry.day, "open", e.target.value)
-                  }
-                  className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500"
-                />
-                <span className="text-gray-400">to</span>
-                <input
-                  type="time"
-                  value={entry.close}
-                  onChange={(e) =>
-                    updateHour(entry.day, "close", e.target.value)
-                  }
-                  className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500"
-                />
-              </>
-            )}
+    <div className="space-y-4">
+      {data.openingHours.map((entry) => (
+        <div
+          key={entry.day}
+          className={`flex items-center gap-4 p-3.5 rounded-xl transition-colors ${
+            entry.isClosed
+              ? "bg-secondary/50"
+              : "bg-background border border-border"
+          }`}
+        >
+          <div className="w-24 text-[13px] font-medium text-foreground">
+            {DAY_NAMES[entry.day]}
           </div>
-        ))}
-      </div>
+
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={entry.isClosed}
+              onChange={(e) =>
+                updateHour(entry.day, "isClosed", e.target.checked)
+              }
+              className="rounded border-border text-primary focus:ring-primary"
+            />
+            <span className="text-[12px] text-muted-foreground">Closed</span>
+          </label>
+
+          {!entry.isClosed && (
+            <>
+              <input
+                type="time"
+                value={entry.open}
+                onChange={(e) =>
+                  updateHour(entry.day, "open", e.target.value)
+                }
+                className="px-3 py-1.5 rounded-lg bg-card border border-border text-[13px] text-foreground font-mono focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
+              />
+              <span className="text-[12px] text-muted-foreground">to</span>
+              <input
+                type="time"
+                value={entry.close}
+                onChange={(e) =>
+                  updateHour(entry.day, "close", e.target.value)
+                }
+                className="px-3 py-1.5 rounded-lg bg-card border border-border text-[13px] text-foreground font-mono focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
+              />
+            </>
+          )}
+        </div>
+      ))}
     </div>
   );
 }
