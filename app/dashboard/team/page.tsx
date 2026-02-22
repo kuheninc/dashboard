@@ -40,9 +40,9 @@ export default function TeamPage() {
     : 0;
 
   return (
-    <div className="space-y-7 max-w-[1400px]">
+    <div className="space-y-5 max-w-[1400px]">
       {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div className="cadence-animate cadence-delay-1">
           <StatCard label="Active Stylists" value={String(activeStylists.length)} icon={UserCog} iconColor="text-primary" />
         </div>
@@ -56,8 +56,8 @@ export default function TeamPage() {
 
       {/* Stylist cards */}
       <div className="cadence-animate cadence-delay-4">
-        <h2 className="font-display text-[17px] text-foreground mb-4">Stylists</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <h2 className="font-display text-[15px] text-foreground mb-3">Stylists</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {stylists.map((stylist) => (
             <StylistCard
               key={stylist._id}

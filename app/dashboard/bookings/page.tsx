@@ -32,9 +32,9 @@ export default function BookingsPage() {
   }, [monthBookings]);
 
   return (
-    <div className="space-y-7 max-w-[1400px]">
+    <div className="space-y-5 max-w-[1400px]">
       {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         <div className="cadence-animate cadence-delay-1">
           <StatCard label="Today" value={todayBookings ? String(todayBookings.length) : "\u2014"} icon={CalendarDays} iconColor="text-primary" />
         </div>
@@ -54,10 +54,10 @@ export default function BookingsPage() {
 
       {/* Tabs */}
       <div className="cadence-animate cadence-delay-5">
-        <div className="flex gap-1 bg-muted/50 p-1 rounded-[10px] w-fit mb-5">
+        <div className="flex gap-1 bg-muted/40 p-0.5 rounded-lg border border-border w-fit mb-4">
           <button
             onClick={() => setTab("list")}
-            className={`px-4 py-2 rounded-[8px] text-[13px] font-medium transition-colors ${
+            className={`px-3.5 py-1.5 rounded-md text-[12px] font-medium transition-colors ${
               tab === "list"
                 ? "bg-primary text-primary-foreground"
                 : "text-muted-foreground hover:text-foreground"
@@ -67,7 +67,7 @@ export default function BookingsPage() {
           </button>
           <button
             onClick={() => setTab("calendar")}
-            className={`px-4 py-2 rounded-[8px] text-[13px] font-medium transition-colors ${
+            className={`px-3.5 py-1.5 rounded-md text-[12px] font-medium transition-colors ${
               tab === "calendar"
                 ? "bg-primary text-primary-foreground"
                 : "text-muted-foreground hover:text-foreground"

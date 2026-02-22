@@ -68,9 +68,10 @@ export default function BookingStatusBadge({ status }: { status: string }) {
 
   return (
     <span
-      className="text-[11px] font-medium px-2.5 py-1 rounded-full inline-block"
+      className="text-[10px] font-semibold px-2 py-0.5 rounded-md inline-flex items-center gap-1 uppercase tracking-wider"
       style={{ color: config.color, backgroundColor: config.bg }}
     >
+      <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: config.color }} />
       {config.label}
     </span>
   );

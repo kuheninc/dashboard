@@ -72,9 +72,9 @@ export default function DashboardOverview() {
   }, [monthBookings, todayBookings, customers, services, stylists, startDate, endDate]);
 
   return (
-    <div className="space-y-7 max-w-[1400px]">
+    <div className="space-y-5 max-w-[1400px]">
       {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         <div className="cadence-animate cadence-delay-1">
           <StatCard
             label="Today's Bookings"
@@ -113,15 +113,15 @@ export default function DashboardOverview() {
       <PendingApprovals />
 
       {/* Content grid: charts + right column */}
-      <div className="grid grid-cols-1 xl:grid-cols-[1fr_340px] gap-5">
+      <div className="grid grid-cols-1 xl:grid-cols-[1fr_340px] gap-4">
         {/* Left: charts */}
-        <div className="space-y-5 cadence-animate cadence-delay-5">
+        <div className="space-y-4 cadence-animate cadence-delay-5">
           <BookingTrendChart data={stats?.trendData ?? []} />
           <ServicePopularityChart data={stats?.popularityData ?? []} />
         </div>
 
         {/* Right column */}
-        <div className="space-y-5 cadence-animate cadence-delay-6">
+        <div className="space-y-4 cadence-animate cadence-delay-6">
           <TodaySchedule />
           <ActivityFeed bookings={stats?.recentBookings ?? []} />
         </div>

@@ -12,11 +12,11 @@ export default function StylistCard({ stylist, stats }: StylistCardProps) {
       : 0;
 
   return (
-    <div className="bg-card border border-border rounded-[14px] hover:shadow-[0_4px_16px_rgba(42,36,32,0.06)] transition-shadow">
-      <div className="px-[22px] py-[18px]">
+    <div className="bg-card border border-border rounded-xl card-glow transition-shadow">
+      <div className="px-5 py-4">
         <div className="flex items-start gap-3 mb-4">
           {/* Avatar */}
-          <div className="w-10 h-10 rounded-[10px] bg-gradient-to-br from-[#a68b6b] to-[#8a7055] flex items-center justify-center text-[14px] font-semibold text-white shrink-0">
+          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#a68b6b] to-[#8a7055] flex items-center justify-center text-[14px] font-semibold text-white shrink-0">
             {stylist.name.slice(0, 2).toUpperCase()}
           </div>
 
@@ -56,16 +56,16 @@ export default function StylistCard({ stylist, stats }: StylistCardProps) {
 
         {/* Performance stats */}
         <div className="grid grid-cols-3 gap-2">
-          <div className="p-2.5 rounded-[10px] bg-[rgba(166,139,107,0.05)] text-center">
-            <div className="font-display text-[14px] text-foreground">{stats?.bookings ?? 0}</div>
+          <div className="p-2.5 rounded-lg bg-[rgba(166,139,107,0.05)] text-center">
+            <div className="font-display font-data text-[14px] text-foreground">{stats?.bookings ?? 0}</div>
             <p className="text-[10px] text-muted-foreground mt-0.5">Bookings</p>
           </div>
-          <div className="p-2.5 rounded-[10px] bg-[rgba(166,139,107,0.05)] text-center">
-            <div className="font-display text-[14px] text-foreground">{completionRate}%</div>
+          <div className="p-2.5 rounded-lg bg-[rgba(166,139,107,0.05)] text-center">
+            <div className="font-display font-data text-[14px] text-foreground">{completionRate}%</div>
             <p className="text-[10px] text-muted-foreground mt-0.5">Completed</p>
           </div>
-          <div className="p-2.5 rounded-[10px] bg-[rgba(166,139,107,0.05)] text-center">
-            <div className="font-display text-[14px] text-foreground">{stylist.availability.length}</div>
+          <div className="p-2.5 rounded-lg bg-[rgba(166,139,107,0.05)] text-center">
+            <div className="font-display font-data text-[14px] text-foreground">{stylist.availability.length}</div>
             <p className="text-[10px] text-muted-foreground mt-0.5">Days/wk</p>
           </div>
         </div>

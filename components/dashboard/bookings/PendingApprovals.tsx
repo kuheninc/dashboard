@@ -38,7 +38,7 @@ export default function PendingApprovals() {
         {enriched.map((booking) => (
           <div
             key={booking._id}
-            className="bg-card border border-border rounded-[14px] min-w-[240px] sm:min-w-[270px] flex-shrink-0 transition-shadow hover:shadow-[0_4px_16px_rgba(42,36,32,0.06)]"
+            className="bg-card border border-border rounded-xl min-w-[240px] sm:min-w-[270px] flex-shrink-0 transition-shadow card-glow"
             style={{
               borderColor: "rgba(196,152,62,0.18)",
               background:
@@ -66,7 +66,7 @@ export default function PendingApprovals() {
               <div className="flex items-center gap-1.5 text-[12px] text-muted-foreground mb-2">
                 <span>{booking.date}</span>
                 <span className="text-[#9c9184]">&middot;</span>
-                <span>
+                <span className="font-data">
                   {booking.startTime} - {booking.endTime}
                 </span>
               </div>

@@ -14,8 +14,8 @@ export default function TodaySchedule() {
 
   if (bookings === undefined) {
     return (
-      <div className="bg-card border border-border rounded-[14px]">
-        <div className="px-[22px] py-[18px] border-b border-border">
+      <div className="bg-card border border-border rounded-xl">
+        <div className="px-5 py-4 border-b border-border">
           <div className="font-display text-[17px] text-foreground">Today&apos;s Schedule</div>
         </div>
         <div className="flex items-center justify-center py-8">
@@ -30,23 +30,23 @@ export default function TodaySchedule() {
     .sort((a, b) => a.startTime.localeCompare(b.startTime));
 
   return (
-    <div className="bg-card border border-border rounded-[14px]">
-      <div className="px-[22px] py-[18px] border-b border-border flex items-center justify-between">
+    <div className="bg-card border border-border rounded-xl">
+      <div className="px-5 py-4 border-b border-border flex items-center justify-between">
         <div className="font-display text-[17px] text-foreground">Today&apos;s Schedule</div>
         <span className="text-[12px] text-[#9c9184]">{enriched.length} appointments</span>
       </div>
-      <div className="p-[22px] space-y-2.5">
+      <div className="px-5 py-4 space-y-2.5">
         {enriched.length === 0 ? (
           <p className="text-[13px] text-[#9c9184] text-center py-6">No appointments today</p>
         ) : (
           enriched.map((booking) => (
             <div
               key={booking._id}
-              className="flex items-center gap-3.5 p-3 rounded-[10px] bg-[rgba(166,139,107,0.05)] hover:bg-[rgba(166,139,107,0.08)] transition-colors"
+              className="flex items-center gap-3.5 p-3 rounded-lg bg-[rgba(166,139,107,0.05)] hover:bg-[rgba(166,139,107,0.08)] transition-colors"
             >
               <div className="flex items-center gap-1.5 text-[#9c9184] min-w-[70px]">
                 <Clock className="w-3.5 h-3.5" />
-                <span className="text-[13px] font-medium text-foreground tabular-nums">{booking.startTime}</span>
+                <span className="text-[13px] font-medium text-foreground font-data">{booking.startTime}</span>
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-[13px] font-medium text-foreground truncate">

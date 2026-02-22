@@ -94,22 +94,22 @@ export default function CalendarView() {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
       {/* Calendar Grid */}
-      <div className="lg:col-span-2 bg-card border border-border rounded-[14px] transition-shadow hover:shadow-[0_2px_12px_rgba(42,36,32,0.06)]">
+      <div className="lg:col-span-2 bg-card border border-border rounded-xl transition-shadow hover:shadow-[0_2px_12px_rgba(42,36,32,0.06)]">
         {/* Card Header */}
-        <div className="px-[22px] py-[18px] border-b border-border flex items-center justify-between">
-          <h3 className="font-display text-[17px] text-foreground italic">
+        <div className="px-5 py-4 border-b border-border flex items-center justify-between">
+          <h3 className="font-display text-[17px] text-foreground">
             {format(currentMonth, "MMMM yyyy")}
           </h3>
           <div className="flex gap-1">
             <button
               onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
-              className="w-9 h-9 rounded-[10px] flex items-center justify-center text-muted-foreground hover:bg-[rgba(166,139,107,0.08)] transition-colors"
+              className="w-9 h-9 rounded-lg flex items-center justify-center text-muted-foreground hover:bg-[rgba(166,139,107,0.08)] transition-colors"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
             <button
               onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
-              className="w-9 h-9 rounded-[10px] flex items-center justify-center text-muted-foreground hover:bg-[rgba(166,139,107,0.08)] transition-colors"
+              className="w-9 h-9 rounded-lg flex items-center justify-center text-muted-foreground hover:bg-[rgba(166,139,107,0.08)] transition-colors"
             >
               <ChevronRight className="w-4 h-4" />
             </button>
@@ -117,13 +117,13 @@ export default function CalendarView() {
         </div>
 
         {/* Card Content */}
-        <div className="px-[22px] py-[18px]">
+        <div className="px-5 py-4">
           {/* Weekday headers */}
           <div className="grid grid-cols-7 mb-2">
             {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
               <div
                 key={d}
-                className="text-center text-[11px] tracking-[1px] uppercase font-medium text-[#9c9184] py-1.5"
+                className="text-center font-label text-[#9c9184] py-1.5"
               >
                 {d}
               </div>
@@ -144,7 +144,7 @@ export default function CalendarView() {
                   key={dateStr}
                   onClick={() => setSelectedDate(dateStr)}
                   className={cn(
-                    "relative flex flex-col items-center py-2 rounded-[10px] transition-colors",
+                    "relative flex flex-col items-center py-2 rounded-lg transition-colors",
                     inMonth ? "hover:bg-[rgba(166,139,107,0.05)]" : "opacity-30",
                     isSelected && !today && "bg-[rgba(166,139,107,0.08)] ring-1 ring-primary/30",
                     today && "bg-primary text-white"
@@ -152,12 +152,11 @@ export default function CalendarView() {
                 >
                   <span
                     className={cn(
-                      "w-9 h-9 flex items-center justify-center rounded-[10px] text-[13px]",
+                      "w-9 h-9 flex items-center justify-center rounded-lg text-[13px] font-data",
                       today
                         ? "font-semibold text-white"
                         : "font-medium text-foreground"
                     )}
-                    style={{ fontVariantNumeric: "tabular-nums" }}
                   >
                     {format(day, "d")}
                   </span>
@@ -200,10 +199,10 @@ export default function CalendarView() {
       </div>
 
       {/* Selected Day Detail */}
-      <div className="bg-card border border-border rounded-[14px] transition-shadow hover:shadow-[0_2px_12px_rgba(42,36,32,0.06)] self-start">
+      <div className="bg-card border border-border rounded-xl transition-shadow hover:shadow-[0_2px_12px_rgba(42,36,32,0.06)] self-start">
         {/* Card Header */}
-        <div className="px-[22px] py-[18px] border-b border-border">
-          <h3 className="font-display text-[17px] text-foreground italic">
+        <div className="px-5 py-4 border-b border-border">
+          <h3 className="font-display text-[17px] text-foreground">
             {selectedDate
               ? format(new Date(selectedDate + "T00:00:00"), "EEEE, MMM d")
               : "Select a date"}
@@ -214,7 +213,7 @@ export default function CalendarView() {
         </div>
 
         {/* Card Content */}
-        <div className="px-[22px] py-[18px] space-y-2.5">
+        <div className="px-5 py-4 space-y-2.5">
           {bookings === undefined ? (
             <div className="flex items-center justify-center py-8">
               <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
@@ -226,7 +225,7 @@ export default function CalendarView() {
             selectedBookings.map((b) => (
               <div
                 key={b._id}
-                className="p-3.5 rounded-[10px] border border-border bg-[rgba(166,139,107,0.03)] hover:bg-[rgba(166,139,107,0.06)] transition-colors space-y-1.5"
+                className="p-3.5 rounded-lg border border-border bg-[rgba(166,139,107,0.03)] hover:bg-[rgba(166,139,107,0.06)] transition-colors space-y-1.5"
               >
                 <div className="flex items-center justify-between">
                   <span className="text-[13px] font-medium text-foreground">
@@ -235,11 +234,11 @@ export default function CalendarView() {
                   <BookingStatusBadge status={b.status} />
                 </div>
                 <p className="text-[12px] text-muted-foreground">
-                  <span className="font-medium text-foreground" style={{ fontVariantNumeric: "tabular-nums" }}>
+                  <span className="font-medium text-foreground font-data">
                     {b.startTime}
                   </span>
                   <span className="text-[#9c9184] mx-1">-</span>
-                  <span className="font-medium text-foreground" style={{ fontVariantNumeric: "tabular-nums" }}>
+                  <span className="font-medium text-foreground font-data">
                     {b.endTime}
                   </span>
                   <span className="text-[#9c9184] mx-1.5">&middot;</span>

@@ -86,8 +86,8 @@ export default function ActivityFeed({ bookings }: ActivityFeedProps) {
     .slice(0, 8);
 
   return (
-    <div className="bg-card border border-border rounded-[14px] transition-shadow hover:shadow-[0_4px_16px_rgba(42,36,32,0.06)]">
-      <div className="px-[22px] py-[18px] border-b border-border flex items-center justify-between">
+    <div className="bg-card border border-border rounded-xl transition-shadow card-glow">
+      <div className="px-5 py-4 border-b border-border flex items-center justify-between">
         <h3 className="font-display text-[17px] text-foreground">
           Recent Activity
         </h3>
@@ -98,7 +98,7 @@ export default function ActivityFeed({ bookings }: ActivityFeedProps) {
         )}
       </div>
 
-      <div className="px-[22px] py-[18px] space-y-4">
+      <div className="px-5 py-4 space-y-4">
         {activities.length === 0 ? (
           <p className="text-[13px] text-muted-foreground text-center py-6">
             No recent activity

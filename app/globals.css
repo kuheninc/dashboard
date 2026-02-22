@@ -46,7 +46,7 @@
 }
 
 :root {
-    --radius: 0.875rem;
+    --radius: 0.625rem;
     /* Cadence warm palette */
     --background: #f6f1ea;
     --foreground: #2a2420;
@@ -63,7 +63,7 @@
     --accent: #f0ebe3;
     --accent-foreground: #2a2420;
     --destructive: #c45a5a;
-    --border: rgba(42, 36, 32, 0.08);
+    --border: rgba(42, 36, 32, 0.06);
     --input: rgba(42, 36, 32, 0.08);
     --ring: #a68b6b;
     --chart-1: #a68b6b;
@@ -87,7 +87,7 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-family: 'General Sans', sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     -webkit-font-smoothing: antialiased;
   }
 }
@@ -105,33 +105,64 @@ body::before {
 
 /* Card entrance animation */
 @keyframes cadence-in {
-  from { opacity: 0; transform: translateY(12px); }
+  from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
 .cadence-animate {
   opacity: 0;
-  transform: translateY(12px);
-  animation: cadence-in 0.5s ease forwards;
+  transform: translateY(8px);
+  animation: cadence-in 0.4s ease forwards;
 }
 
 /* Staggered delays */
-.cadence-delay-1 { animation-delay: 0.05s; }
-.cadence-delay-2 { animation-delay: 0.1s; }
-.cadence-delay-3 { animation-delay: 0.15s; }
-.cadence-delay-4 { animation-delay: 0.2s; }
-.cadence-delay-5 { animation-delay: 0.25s; }
-.cadence-delay-6 { animation-delay: 0.3s; }
+.cadence-delay-1 { animation-delay: 0.04s; }
+.cadence-delay-2 { animation-delay: 0.08s; }
+.cadence-delay-3 { animation-delay: 0.12s; }
+.cadence-delay-4 { animation-delay: 0.16s; }
+.cadence-delay-5 { animation-delay: 0.20s; }
+.cadence-delay-6 { animation-delay: 0.24s; }
 
-/* Serif display utility */
+/* Display heading utility */
 .font-display {
-  font-family: 'Fraunces', serif;
-  font-style: italic;
-  font-weight: 400;
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-style: normal;
+  letter-spacing: -0.025em;
+}
+
+/* Monospace data utility */
+.font-data {
+  font-family: 'JetBrains Mono', monospace;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+/* Label utility */
+.font-label {
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* Monospace override */
+.font-mono {
+  font-family: 'JetBrains Mono', monospace !important;
+}
+
+/* Card hover effect */
+.card-glow {
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.card-glow:hover {
+  box-shadow: 0 1px 3px rgba(42, 36, 32, 0.04), 0 4px 12px rgba(42, 36, 32, 0.06);
+  border-color: rgba(42, 36, 32, 0.12);
 }
 
 /* Custom scrollbar */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(42, 36, 32, 0.12); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(42, 36, 32, 0.2); }
+::-webkit-scrollbar-thumb { background: rgba(42, 36, 32, 0.10); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(42, 36, 32, 0.18); }

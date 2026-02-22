@@ -21,9 +21,9 @@ export default function CustomersPage() {
   }, [customers]);
 
   return (
-    <div className="space-y-7 max-w-[1400px]">
+    <div className="space-y-5 max-w-[1400px]">
       {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div className="cadence-animate cadence-delay-1">
           <StatCard label="Total Customers" value={String(stats.total)} icon={Users} iconColor="text-primary" />
         </div>
@@ -36,7 +36,7 @@ export default function CustomersPage() {
       </div>
 
       {/* Main content */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 cadence-animate cadence-delay-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 cadence-animate cadence-delay-4">
         <div className="lg:col-span-2">
           <CustomerTable
             customers={customers}
@@ -45,7 +45,7 @@ export default function CustomersPage() {
           />
         </div>
 
-        <div className="space-y-5">
+        <div className="space-y-4">
           <CustomerProfile
             customerId={selectedCustomerId}
             customers={customers}

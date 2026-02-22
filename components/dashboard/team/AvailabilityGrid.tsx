@@ -23,13 +23,13 @@ interface AvailabilityGridProps {
 
 export default function AvailabilityGrid({ stylists }: AvailabilityGridProps) {
   return (
-    <div className="bg-card border border-border rounded-[14px]">
-      <div className="px-4 lg:px-[22px] py-[18px] border-b border-border">
+    <div className="bg-card border border-border rounded-xl">
+      <div className="px-4 lg:px-5 py-4 border-b border-border">
         <h3 className="font-display text-[17px] text-foreground">Weekly Availability</h3>
         <p className="text-[13px] text-muted-foreground mt-0.5">All stylists&apos; working hours</p>
       </div>
 
-      <div className="px-4 lg:px-[22px] py-[18px]">
+      <div className="px-4 lg:px-5 py-4">
         <div className="overflow-x-auto -mx-4 px-4 lg:mx-0 lg:px-0">
           <div className="min-w-[500px]">
             {/* Day headers */}
@@ -55,16 +55,16 @@ export default function AvailabilityGrid({ stylists }: AvailabilityGridProps) {
                       {avail ? (
                         <div
                           className={cn(
-                            "h-full rounded-[6px] lg:rounded-[8px] flex items-center justify-center",
+                            "h-full rounded-[6px] lg:rounded-md flex items-center justify-center",
                             COLORS[i % COLORS.length]
                           )}
                         >
-                          <span className="text-[9px] lg:text-[10px] font-medium text-foreground/70">
+                          <span className="text-[9px] lg:text-[10px] font-medium text-foreground/70 font-data">
                             {avail.startTime}-{avail.endTime}
                           </span>
                         </div>
                       ) : (
-                        <div className="h-full rounded-[6px] lg:rounded-[8px] border border-dashed border-border" />
+                        <div className="h-full rounded-[6px] lg:rounded-md border border-dashed border-border" />
                       )}
                     </div>
                   );

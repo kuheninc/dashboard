@@ -2,8 +2,8 @@ import type { Doc } from "@/convex/_generated/dataModel";
 
 export default function ServiceCard({ service }: { service: Doc<"services"> }) {
   return (
-    <div className="bg-card border border-border rounded-[14px] hover:shadow-[0_4px_16px_rgba(42,36,32,0.06)] transition-shadow">
-      <div className="px-[22px] py-[18px]">
+    <div className="bg-card border border-border rounded-xl card-glow transition-shadow">
+      <div className="px-5 py-4">
         <div className="flex items-start justify-between mb-3">
           <div className="min-w-0">
             <h3 className="font-display text-[17px] text-foreground">{service.name}</h3>
@@ -25,7 +25,7 @@ export default function ServiceCard({ service }: { service: Doc<"services"> }) {
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-1.5">
             <span className="text-[13px] text-muted-foreground">RM</span>
-            <span className="font-display text-[14px] text-foreground">{service.priceRM}</span>
+            <span className="font-display font-data text-[14px] text-foreground">{service.priceRM}</span>
           </div>
           <div className="w-px h-3 bg-border" />
           <div className="flex items-center gap-1.5">
@@ -43,7 +43,7 @@ export default function ServiceCard({ service }: { service: Doc<"services"> }) {
               <circle cx="12" cy="12" r="10" />
               <polyline points="12 6 12 12 16 14" />
             </svg>
-            <span className="text-[13px] text-muted-foreground">{service.durationMinutes} min</span>
+            <span className="text-[13px] text-muted-foreground font-data">{service.durationMinutes} min</span>
           </div>
         </div>
       </div>

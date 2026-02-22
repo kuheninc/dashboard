@@ -23,7 +23,7 @@ export default function CustomerProfile({ customerId, customers, services, styli
 
   if (!customerId) {
     return (
-      <div className="bg-card border border-border rounded-[14px]">
+      <div className="bg-card border border-border rounded-xl">
         <div className="py-12 text-center">
           <User className="w-10 h-10 text-[#9c9184] opacity-30 mx-auto mb-2" />
           <p className="text-[13px] text-muted-foreground">Select a customer to view details</p>
@@ -47,9 +47,9 @@ export default function CustomerProfile({ customerId, customers, services, styli
       : 0;
 
   return (
-    <div className="bg-card border border-border rounded-[14px]">
+    <div className="bg-card border border-border rounded-xl">
       {/* Header */}
-      <div className="px-[22px] py-[18px] border-b border-border">
+      <div className="px-5 py-4 border-b border-border">
         <div className="flex items-start justify-between">
           <span className="font-display text-[17px] text-foreground">{customer.name}</span>
           {customer.isBlacklisted ? (
@@ -65,7 +65,7 @@ export default function CustomerProfile({ customerId, customers, services, styli
       </div>
 
       {/* Content */}
-      <div className="px-[22px] py-[18px] space-y-5">
+      <div className="px-5 py-4 space-y-5">
         {/* Contact info */}
         <div className="space-y-2.5">
           <div className="flex items-center gap-2.5 text-muted-foreground">
@@ -93,25 +93,25 @@ export default function CustomerProfile({ customerId, customers, services, styli
 
         {/* Stats */}
         <div className="grid grid-cols-3 gap-2.5">
-          <div className="p-2.5 rounded-[10px] bg-[rgba(166,139,107,0.05)] text-center">
-            <p className="font-display text-[18px] text-foreground">{customer.totalBookings}</p>
+          <div className="p-2.5 rounded-lg bg-[rgba(166,139,107,0.05)] text-center">
+            <p className="font-display font-data text-[18px] text-foreground">{customer.totalBookings}</p>
             <p className="text-[10px] text-[#9c9184] mt-0.5">Bookings</p>
           </div>
-          <div className="p-2.5 rounded-[10px] bg-[rgba(166,139,107,0.05)] text-center">
-            <p className={`font-display text-[18px] ${customer.noShowCount > 0 ? "text-[#c45a5a]" : "text-foreground"}`}>
+          <div className="p-2.5 rounded-lg bg-[rgba(166,139,107,0.05)] text-center">
+            <p className={`font-display font-data text-[18px] ${customer.noShowCount > 0 ? "text-[#c45a5a]" : "text-foreground"}`}>
               {customer.noShowCount}
             </p>
             <p className="text-[10px] text-[#9c9184] mt-0.5">No-Shows</p>
           </div>
-          <div className="p-2.5 rounded-[10px] bg-[rgba(166,139,107,0.05)] text-center">
-            <p className="font-display text-[18px] text-foreground">{showRate}%</p>
+          <div className="p-2.5 rounded-lg bg-[rgba(166,139,107,0.05)] text-center">
+            <p className="font-display font-data text-[18px] text-foreground">{showRate}%</p>
             <p className="text-[10px] text-[#9c9184] mt-0.5">Show Rate</p>
           </div>
         </div>
 
         {/* No-show warning */}
         {customer.noShowCount >= 2 && (
-          <div className="flex items-start gap-2.5 p-3 bg-[rgba(196,152,62,0.08)] border border-[rgba(196,152,62,0.15)] rounded-[10px]">
+          <div className="flex items-start gap-2.5 p-3 bg-[rgba(196,152,62,0.08)] border border-[rgba(196,152,62,0.15)] rounded-lg">
             <AlertTriangle className="w-4 h-4 text-[#c4983e] mt-0.5 shrink-0" />
             <div>
               <p className="text-[13px] font-medium text-[#c4983e]">
@@ -126,7 +126,7 @@ export default function CustomerProfile({ customerId, customers, services, styli
 
         {/* Booking history */}
         <div>
-          <p className="text-[11px] tracking-[1px] uppercase text-[#9c9184] font-medium mb-3">
+          <p className="font-label text-[#9c9184] mb-3">
             Recent Bookings
           </p>
           <div className="space-y-2">
@@ -138,12 +138,12 @@ export default function CustomerProfile({ customerId, customers, services, styli
               bookings.slice(0, 6).map((b) => (
                 <div
                   key={b._id}
-                  className="flex items-center justify-between py-2.5 px-3 rounded-[10px] bg-[rgba(166,139,107,0.05)]"
+                  className="flex items-center justify-between py-2.5 px-3 rounded-lg bg-[rgba(166,139,107,0.05)]"
                 >
                   <div>
                     <p className="text-[13px] font-medium text-foreground">{b.serviceName}</p>
                     <p className="text-[11px] text-[#9c9184] mt-0.5">
-                      {b.date} &middot; {b.startTime} &middot; {b.stylistName}
+                      <span className="font-data">{b.date}</span> &middot; <span className="font-data">{b.startTime}</span> &middot; {b.stylistName}
                     </p>
                   </div>
                   <BookingStatusBadge status={b.status as BookingStatus} />

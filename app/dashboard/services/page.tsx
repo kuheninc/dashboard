@@ -22,9 +22,9 @@ export default function ServicesPage() {
   }, [services]);
 
   return (
-    <div className="space-y-7 max-w-[1400px]">
+    <div className="space-y-5 max-w-[1400px]">
       {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div className="cadence-animate cadence-delay-1">
           <StatCard label="Active Services" value={String(activeServices.length)} icon={Scissors} iconColor="text-primary" />
         </div>
@@ -38,8 +38,8 @@ export default function ServicesPage() {
 
       {/* Active services */}
       <div className="cadence-animate cadence-delay-4">
-        <h2 className="font-display text-[17px] text-foreground mb-4">Active Services</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <h2 className="font-display text-[15px] text-foreground mb-3">Active Services</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {activeServices.map((service) => (
             <ServiceCard key={service._id} service={service} />
           ))}
@@ -49,8 +49,8 @@ export default function ServicesPage() {
       {/* Inactive services */}
       {inactiveServices.length > 0 && (
         <div className="cadence-animate cadence-delay-5">
-          <h2 className="font-display text-[17px] text-[#9c9184] mb-4">Inactive Services</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <h2 className="font-display text-[15px] text-[#9c9184] mb-3">Inactive Services</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {inactiveServices.map((service) => (
               <ServiceCard key={service._id} service={service} />
             ))}

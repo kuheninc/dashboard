@@ -118,7 +118,7 @@ export default function BookingTable() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search by customer or service..."
-            className="w-full bg-card border border-border rounded-[10px] pl-10 pr-4 py-2.5 text-[13px] text-foreground placeholder:text-[#9c9184] outline-none focus:ring-1 focus:ring-primary/30 transition-shadow"
+            className="w-full bg-card border border-border rounded-lg pl-10 pr-4 py-2.5 text-[13px] text-foreground placeholder:text-[#9c9184] outline-none focus:ring-1 focus:ring-primary/30 transition-shadow"
           />
         </div>
         <div className="flex items-center gap-2.5 overflow-x-auto">
@@ -130,8 +130,8 @@ export default function BookingTable() {
                 onClick={() => setStatusFilter(opt.value)}
                 className={`px-2.5 py-1 text-[11px] font-medium transition-colors whitespace-nowrap ${
                   statusFilter === opt.value
-                    ? "bg-primary text-primary-foreground rounded-[8px]"
-                    : "bg-muted text-muted-foreground rounded-[8px] hover:bg-[rgba(166,139,107,0.08)]"
+                    ? "bg-primary text-primary-foreground rounded-md"
+                    : "bg-muted text-muted-foreground rounded-md hover:bg-[rgba(166,139,107,0.08)]"
                 }`}
               >
                 {opt.label}
@@ -142,30 +142,30 @@ export default function BookingTable() {
       </div>
 
       {/* Table */}
-      <div className="bg-card border border-border rounded-[14px] overflow-hidden transition-shadow hover:shadow-[0_2px_12px_rgba(42,36,32,0.06)]">
+      <div className="bg-card border border-border rounded-xl overflow-hidden transition-shadow hover:shadow-[0_2px_12px_rgba(42,36,32,0.06)]">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[640px]">
             <thead>
               <tr className="bg-[rgba(166,139,107,0.05)]">
-                <th className="text-left text-[11px] tracking-[1px] uppercase text-[#9c9184] font-medium px-4 lg:px-[22px] py-[14px]">
+                <th className="text-left font-label text-[#9c9184] px-4 lg:px-5 py-3">
                   Date
                 </th>
-                <th className="text-left text-[11px] tracking-[1px] uppercase text-[#9c9184] font-medium px-4 lg:px-[22px] py-[14px]">
+                <th className="text-left font-label text-[#9c9184] px-4 lg:px-5 py-3">
                   Time
                 </th>
-                <th className="text-left text-[11px] tracking-[1px] uppercase text-[#9c9184] font-medium px-4 lg:px-[22px] py-[14px]">
+                <th className="text-left font-label text-[#9c9184] px-4 lg:px-5 py-3">
                   Customer
                 </th>
-                <th className="text-left text-[11px] tracking-[1px] uppercase text-[#9c9184] font-medium px-4 lg:px-[22px] py-[14px]">
+                <th className="text-left font-label text-[#9c9184] px-4 lg:px-5 py-3">
                   Service
                 </th>
-                <th className="text-left text-[11px] tracking-[1px] uppercase text-[#9c9184] font-medium px-4 lg:px-[22px] py-[14px] hidden lg:table-cell">
+                <th className="text-left font-label text-[#9c9184] px-4 lg:px-5 py-3 hidden lg:table-cell">
                   Stylist
                 </th>
-                <th className="text-left text-[11px] tracking-[1px] uppercase text-[#9c9184] font-medium px-4 lg:px-[22px] py-[14px] hidden sm:table-cell">
+                <th className="text-left font-label text-[#9c9184] px-4 lg:px-5 py-3 hidden sm:table-cell">
                   Price
                 </th>
-                <th className="text-left text-[11px] tracking-[1px] uppercase text-[#9c9184] font-medium px-4 lg:px-[22px] py-[14px]">
+                <th className="text-left font-label text-[#9c9184] px-4 lg:px-5 py-3">
                   Status
                 </th>
               </tr>
@@ -176,22 +176,22 @@ export default function BookingTable() {
                   key={booking._id}
                   className="border-t border-border hover:bg-[rgba(166,139,107,0.05)] transition-colors"
                 >
-                  <td className="text-[13px] text-foreground px-4 lg:px-[22px] py-[14px] whitespace-nowrap">
+                  <td className="text-[13px] text-foreground font-data px-4 lg:px-5 py-3 whitespace-nowrap">
                     {booking.date}
                   </td>
-                  <td className="text-[13px] px-4 lg:px-[22px] py-[14px] whitespace-nowrap">
-                    <span className="font-medium text-foreground" style={{ fontVariantNumeric: "tabular-nums" }}>
+                  <td className="text-[13px] px-4 lg:px-5 py-3 whitespace-nowrap">
+                    <span className="font-medium text-foreground font-data">
                       {booking.startTime}
                     </span>
                     <span className="text-[#9c9184] mx-1">-</span>
-                    <span className="font-medium text-foreground" style={{ fontVariantNumeric: "tabular-nums" }}>
+                    <span className="font-medium text-foreground font-data">
                       {booking.endTime}
                     </span>
                   </td>
-                  <td className="text-[13px] px-4 lg:px-[22px] py-[14px]">
+                  <td className="text-[13px] px-4 lg:px-5 py-3">
                     <div className="flex items-center gap-2.5">
                       <div
-                        className={`w-8 h-8 rounded-lg flex items-center justify-center text-[12px] font-semibold flex-shrink-0 ${getAvatarColor(booking.customerName)}`}
+                        className={`w-7 h-7 rounded-md flex items-center justify-center text-[12px] font-semibold flex-shrink-0 ${getAvatarColor(booking.customerName)}`}
                       >
                         {getInitials(booking.customerName)}
                       </div>
@@ -200,16 +200,16 @@ export default function BookingTable() {
                       </span>
                     </div>
                   </td>
-                  <td className="text-[13px] text-muted-foreground px-4 lg:px-[22px] py-[14px] truncate max-w-[140px]">
+                  <td className="text-[13px] text-muted-foreground px-4 lg:px-5 py-3 truncate max-w-[140px]">
                     {booking.serviceName}
                   </td>
-                  <td className="text-[13px] text-muted-foreground px-4 lg:px-[22px] py-[14px] hidden lg:table-cell">
+                  <td className="text-[13px] text-muted-foreground px-4 lg:px-5 py-3 hidden lg:table-cell">
                     {booking.stylistName}
                   </td>
-                  <td className="text-[13px] text-foreground px-4 lg:px-[22px] py-[14px] hidden sm:table-cell whitespace-nowrap" style={{ fontVariantNumeric: "tabular-nums" }}>
+                  <td className="text-[13px] text-foreground font-data px-4 lg:px-5 py-3 hidden sm:table-cell whitespace-nowrap">
                     RM {booking.servicePrice}
                   </td>
-                  <td className="text-[13px] px-4 lg:px-[22px] py-[14px]">
+                  <td className="text-[13px] px-4 lg:px-5 py-3">
                     <BookingStatusBadge status={booking.status} />
                   </td>
                 </tr>

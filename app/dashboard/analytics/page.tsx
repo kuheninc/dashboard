@@ -140,9 +140,9 @@ export default function AnalyticsPage() {
   }, [bookings, customers, services, stylists, startDate, endDate]);
 
   return (
-    <div className="space-y-7 max-w-[1400px]">
+    <div className="space-y-5 max-w-[1400px]">
       {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         <div className="cadence-animate cadence-delay-1">
           <StatCard
             label="Monthly Revenue"
@@ -179,12 +179,12 @@ export default function AnalyticsPage() {
 
       {/* Tabs */}
       <div className="cadence-animate cadence-delay-5">
-        <div className="flex gap-1 bg-muted/50 p-1 rounded-[10px] w-fit mb-5">
+        <div className="flex gap-1 bg-muted/40 p-0.5 rounded-lg border border-border w-fit mb-4">
           {(["revenue", "bookings", "customers"] as Tab[]).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
-              className={`px-4 py-2 rounded-[8px] text-[13px] font-medium transition-colors capitalize ${
+              className={`px-3.5 py-1.5 rounded-md text-[12px] font-medium transition-colors capitalize ${
                 tab === t
                   ? "bg-primary text-primary-foreground"
                   : "text-muted-foreground hover:text-foreground"
@@ -197,9 +197,9 @@ export default function AnalyticsPage() {
 
         {/* Revenue Tab */}
         {tab === "revenue" && (
-          <div className="space-y-5">
+          <div className="space-y-4">
             <RevenueChart data={data?.revenueData ?? []} />
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <ServicePopularityChart data={data?.popularityData ?? []} />
               <StylistPerformanceChart data={data?.stylistPerformanceData ?? []} />
             </div>
@@ -208,8 +208,8 @@ export default function AnalyticsPage() {
 
         {/* Bookings Tab */}
         {tab === "bookings" && (
-          <div className="space-y-5">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <BookingFunnelChart data={data?.funnelData ?? []} />
               <BookingTrendChart data={data?.trendData ?? []} />
             </div>
@@ -219,8 +219,8 @@ export default function AnalyticsPage() {
 
         {/* Customers Tab */}
         {tab === "customers" && (
-          <div className="space-y-5">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <CustomerRetentionChart data={data?.retentionData ?? []} />
               <StylistPerformanceChart data={data?.stylistPerformanceData ?? []} />
             </div>
