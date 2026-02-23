@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, type ReactNode } from "react";
+import { createContext, useContext, useEffect, type ReactNode } from "react";
 import { useQuery } from "convex/react";
 import { api } from "../convex/_generated/api";
 import type { Id, Doc } from "../convex/_generated/dataModel";
@@ -41,6 +41,13 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     api.customers.queries.listBySalon,
     salonId ? { salonId } : "skip"
   );
+
+  // salon is null when not authenticated or no salon exists — redirect to sign-in
+  useEffect(() => {
+    if (salon === null) {
+      window.location.href = "/sign-in";
+    }
+  }, [salon]);
 
   if (!salon || !services || !stylists || !customers) {
     return (
