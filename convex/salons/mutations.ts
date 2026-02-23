@@ -108,6 +108,35 @@ export const updateInfo = mutation({
   },
 });
 
+export const createFromImport = mutation({
+  args: {
+    name: v.string(),
+    address: v.string(),
+    openingHours: v.array(
+      v.object({
+        day: v.number(),
+        open: v.string(),
+        close: v.string(),
+        isClosed: v.boolean(),
+      })
+    ),
+    timezone: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    return await ctx.db.insert("salons", {
+      ...args,
+      waPhoneNumberId: "PENDING_SETUP",
+      waBusinessAccountId: "PENDING_SETUP",
+      waAccessToken: "PENDING_SETUP",
+      adminPhones: [],
+      closedDates: [],
+      ownerId: userId ?? undefined,
+      isActive: true,
+    });
+  },
+});
+
 export const updateAdminPhones = mutation({
   args: {
     salonId: v.id("salons"),
