@@ -20,7 +20,7 @@ function CadenceIcon({ className }: { className?: string }) {
   );
 }
 
-type Mode = "signIn" | "forgotPassword" | "resetSent";
+type Mode = "signIn" | "signUp" | "forgotPassword" | "resetSent";
 
 export default function SignInPage() {
   const { signIn } = useAuthActions();
@@ -46,8 +46,6 @@ export default function SignInPage() {
     setError("");
 
     if (mode === "forgotPassword") {
-      // For now, show a message that password reset was "sent"
-      // Full email-based reset requires configuring an email provider in Convex Auth
       setMode("resetSent");
       return;
     }
@@ -59,15 +57,16 @@ export default function SignInPage() {
 
     setLoading(true);
     try {
-      await signIn("password", {
-        email,
-        password,
-        flow: "signIn",
-      });
-      // Full page navigation to force fresh auth initialization
-      window.location.href = "/dashboard";
+      const flow = mode === "signUp" ? "signUp" : "signIn";
+      await signIn("password", { email, password, flow });
+      // Sign-up → onboarding; Sign-in → dashboard
+      window.location.href = mode === "signUp" ? "/onboarding" : "/dashboard";
     } catch (err) {
-      setError("Invalid email or password. Please try again.");
+      const msg =
+        mode === "signUp"
+          ? "Could not create account. That email may already be in use."
+          : "Invalid email or password. Please try again.";
+      setError(msg);
       setLoading(false);
     }
   }
@@ -80,12 +79,14 @@ export default function SignInPage() {
 
   const title = {
     signIn: "Welcome back",
+    signUp: "Create your account",
     forgotPassword: "Reset your password",
     resetSent: "Check your inbox",
   }[mode];
 
   const subtitle = {
     signIn: "Sign in to manage your salon",
+    signUp: "Set up your email and password to get started",
     forgotPassword: "We'll send you a link to get back in",
     resetSent: `We've sent a reset link to ${email}`,
   }[mode];
@@ -194,7 +195,7 @@ export default function SignInPage() {
               </div>
 
               {/* Password (hidden for forgot password) */}
-              {mode !== "forgotPassword" && (
+              {(mode === "signIn" || mode === "signUp") && (
                 <div>
                   <label className="block text-[11px] font-medium text-[rgba(242,235,224,0.4)] uppercase tracking-[0.04em] mb-2">
                     Password
@@ -241,6 +242,7 @@ export default function SignInPage() {
                 ) : (
                   <>
                     {mode === "signIn" && "Take me to my salon"}
+                    {mode === "signUp" && "Create account"}
                     {mode === "forgotPassword" && "Help me get back in"}
                     <ArrowRight className="w-4 h-4" />
                   </>
@@ -251,7 +253,7 @@ export default function SignInPage() {
 
           {/* Mode switcher */}
           <div className="mt-8 pt-6 border-t border-[rgba(242,235,224,0.06)]">
-            {(mode === "signIn" || mode === "resetSent") && (
+            {mode === "signIn" && (
               <button
                 onClick={() => switchMode("forgotPassword")}
                 className="w-full text-center text-[13px] text-[rgba(242,235,224,0.5)] hover:text-[rgba(242,235,224,0.75)] transition-colors"
@@ -261,7 +263,7 @@ export default function SignInPage() {
               </button>
             )}
 
-            {mode === "forgotPassword" && (
+            {(mode === "forgotPassword" || mode === "resetSent") && (
               <button
                 onClick={() => switchMode("signIn")}
                 className="w-full text-center text-[13px] text-[rgba(242,235,224,0.5)] hover:text-[rgba(242,235,224,0.75)] transition-colors"
@@ -270,16 +272,26 @@ export default function SignInPage() {
                 <span className="text-[#c4a67e] font-medium">take me back</span>
               </button>
             )}
+
+            {mode === "signUp" && (
+              <button
+                onClick={() => switchMode("signIn")}
+                className="w-full text-center text-[13px] text-[rgba(242,235,224,0.5)] hover:text-[rgba(242,235,224,0.75)] transition-colors"
+              >
+                Already have an account?{" "}
+                <span className="text-[#c4a67e] font-medium">Sign in</span>
+              </button>
+            )}
           </div>
 
-          {/* Onboarding CTA */}
+          {/* Sign-up CTA */}
           {mode === "signIn" && (
             <div className="mt-6 p-4 rounded-xl bg-[rgba(209,183,153,0.06)] border border-[rgba(209,183,153,0.1)]">
               <p className="text-[13px] text-[rgba(242,235,224,0.5)] mb-2.5">
                 New here? Let's get you set up.
               </p>
               <button
-                onClick={() => router.push("/onboarding")}
+                onClick={() => switchMode("signUp")}
                 className="flex items-center gap-2 text-[13px] font-medium text-[#c4a67e] hover:text-[#d1b799] transition-colors"
               >
                 Set up my salon

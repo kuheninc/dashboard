@@ -49,12 +49,15 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     salonId ? { salonId } : "skip"
   );
 
-  // Redirect only when auth is resolved and user is not authenticated,
-  // or when authenticated but no salon found
+  // Redirect when auth is resolved:
+  // - Not authenticated → sign-in
+  // - Authenticated but no salon → onboarding
   useEffect(() => {
     if (authLoading) return;
-    if (!isAuthenticated || salon === null) {
+    if (!isAuthenticated) {
       window.location.href = "/sign-in";
+    } else if (salon === null) {
+      window.location.href = "/onboarding";
     }
   }, [authLoading, isAuthenticated, salon]);
 
