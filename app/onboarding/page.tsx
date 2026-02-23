@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useMutation, useQuery, useConvexAuth } from "convex/react";
+import { useState } from "react";
+import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { OnboardingFormData, INITIAL_FORM_DATA } from "@/lib/types";
 import SalonDetailsStep from "@/components/onboarding/SalonDetailsStep";
@@ -35,27 +35,11 @@ const STEPS = [
 ];
 
 export default function OnboardingPage() {
-  const { isAuthenticated, isLoading: authLoading } = useConvexAuth();
-  const existingSalon = useQuery(
-    api.salons.queries.getMySalon,
-    authLoading ? "skip" : {}
-  );
-
   const [step, setStep] = useState(0);
   const [data, setData] = useState<OnboardingFormData>(INITIAL_FORM_DATA);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
-
-  // Auth guard: must be logged in, and must not already have a salon
-  useEffect(() => {
-    if (authLoading) return;
-    if (!isAuthenticated) {
-      window.location.href = "/sign-in";
-    } else if (existingSalon) {
-      window.location.href = "/dashboard";
-    }
-  }, [authLoading, isAuthenticated, existingSalon]);
 
   const createSalon = useMutation(api.salons.mutations.create);
   const createService = useMutation(api.services.mutations.create);
@@ -169,20 +153,6 @@ export default function OnboardingPage() {
   };
 
   const currentStep = STEPS[step];
-
-  // Show loading while checking auth / existing salon
-  if (authLoading || (!isAuthenticated) || existingSalon) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-background">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#d1b799] to-[#a68b6b] flex items-center justify-center animate-pulse">
-            <CadenceIcon className="w-5 h-3.5 text-[#1c1720]" />
-          </div>
-          <span className="font-display text-[15px] text-muted-foreground">Cadence</span>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-background">
