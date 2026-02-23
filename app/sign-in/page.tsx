@@ -1,9 +1,8 @@
 "use client";
 
 import { useAuthActions } from "@convex-dev/auth/react";
-import { useConvexAuth } from "convex/react";
 import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Eye, EyeOff, ArrowRight, Loader2 } from "lucide-react";
 
 function CadenceIcon({ className }: { className?: string }) {
@@ -24,7 +23,6 @@ type Mode = "signIn" | "forgotPassword" | "resetSent";
 
 export default function SignInPage() {
   const { signIn } = useAuthActions();
-  const { isAuthenticated, isLoading: authLoading } = useConvexAuth();
   const router = useRouter();
 
   const [mode, setMode] = useState<Mode>("signIn");
@@ -33,28 +31,6 @@ export default function SignInPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    router.prefetch("/dashboard");
-  }, [router]);
-
-  useEffect(() => {
-    if (isAuthenticated) {
-      router.replace("/dashboard");
-    }
-  }, [isAuthenticated, router]);
-
-  if (isAuthenticated) {
-    return (
-      <div className="flex items-center justify-center min-h-screen" style={{ background: "#1c1720" }}>
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#d1b799] to-[#a68b6b] flex items-center justify-center animate-pulse">
-            <CadenceIcon className="w-[18px] h-[13px] text-[#1c1720]" />
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
