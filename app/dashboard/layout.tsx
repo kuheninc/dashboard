@@ -2,7 +2,6 @@
 
 import { useConvexAuth } from "convex/react";
 import { useAuthActions } from "@convex-dev/auth/react";
-import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import DashboardShell from "@/components/dashboard/DashboardShell";
 
@@ -13,7 +12,6 @@ export default function DashboardLayout({
 }) {
   const { isAuthenticated, isLoading } = useConvexAuth();
   const { signOut } = useAuthActions();
-  const router = useRouter();
   const [timedOut, setTimedOut] = useState(false);
 
   useEffect(() => {
@@ -21,21 +19,20 @@ export default function DashboardLayout({
     return () => clearTimeout(timer);
   }, []);
 
-  // If auth hangs for 3s, clear stale session and redirect
+  // If auth hangs for 3s, clear stale session and hard redirect
   useEffect(() => {
     if (timedOut && isLoading) {
-      signOut().catch(() => {}).finally(() => {
-        router.replace("/sign-in");
-      });
+      signOut().catch(() => {});
+      window.location.href = "/sign-in";
     }
-  }, [timedOut, isLoading, signOut, router]);
+  }, [timedOut, isLoading, signOut]);
 
   // Auth resolved — not authenticated
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
-      router.replace("/sign-in");
+      window.location.href = "/sign-in";
     }
-  }, [isLoading, isAuthenticated, router]);
+  }, [isLoading, isAuthenticated]);
 
   if (isLoading || !isAuthenticated) {
     return (

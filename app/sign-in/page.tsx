@@ -55,7 +55,8 @@ export default function SignInPage() {
         password,
         flow: "signIn",
       });
-      router.replace("/dashboard");
+      // Full page navigation to force fresh auth initialization
+      window.location.href = "/dashboard";
     } catch (err) {
       setError("Invalid email or password. Please try again.");
       setLoading(false);
