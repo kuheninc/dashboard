@@ -75,17 +75,8 @@ export default function SignInPage() {
         password,
         flow: "signIn",
       });
-    } catch {
-      // Account doesn't exist yet — auto-create it
-      try {
-        await signIn("password", {
-          email,
-          password,
-          flow: "signUp",
-        });
-      } catch {
-        setError("Invalid email or password. Please try again.");
-      }
+    } catch (err) {
+      setError("Invalid email or password. Please try again.");
     } finally {
       setLoading(false);
     }
