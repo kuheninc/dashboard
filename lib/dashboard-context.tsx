@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, type ReactNode } from "react";
-import { useQuery } from "convex/react";
+import { useQuery, useConvexAuth } from "convex/react";
 import { api } from "../convex/_generated/api";
 import type { Id, Doc } from "../convex/_generated/dataModel";
 
@@ -26,7 +26,14 @@ export function useSalonId() {
 }
 
 export function DashboardProvider({ children }: { children: ReactNode }) {
-  const salon = useQuery(api.salons.queries.getMySalon);
+  const { isAuthenticated, isLoading: authLoading } = useConvexAuth();
+
+  // Only query once auth has settled — prevents race condition where
+  // getAuthUserId returns null before the WebSocket has authenticated
+  const salon = useQuery(
+    api.salons.queries.getMySalon,
+    authLoading ? "skip" : {}
+  );
   const salonId = salon?._id;
 
   const services = useQuery(
@@ -42,14 +49,16 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     salonId ? { salonId } : "skip"
   );
 
-  // salon is null when not authenticated or no salon exists — redirect to sign-in
+  // Redirect only when auth is resolved and user is not authenticated,
+  // or when authenticated but no salon found
   useEffect(() => {
-    if (salon === null) {
+    if (authLoading) return;
+    if (!isAuthenticated || salon === null) {
       window.location.href = "/sign-in";
     }
-  }, [salon]);
+  }, [authLoading, isAuthenticated, salon]);
 
-  if (!salon || !services || !stylists || !customers) {
+  if (authLoading || !salon || !services || !stylists || !customers) {
     return (
       <div className="flex items-center justify-center h-screen bg-background">
         <div className="flex flex-col items-center gap-4">
