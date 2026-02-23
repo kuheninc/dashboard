@@ -35,6 +35,10 @@ export default function SignInPage() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    router.prefetch("/dashboard");
+  }, [router]);
+
+  useEffect(() => {
     if (isAuthenticated) {
       router.replace("/dashboard");
     }
@@ -75,9 +79,9 @@ export default function SignInPage() {
         password,
         flow: "signIn",
       });
+      router.replace("/dashboard");
     } catch (err) {
       setError("Invalid email or password. Please try again.");
-    } finally {
       setLoading(false);
     }
   }
