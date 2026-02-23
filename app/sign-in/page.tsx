@@ -44,7 +44,7 @@ export default function SignInPage() {
     }
   }, [isAuthenticated, router]);
 
-  if (authLoading || isAuthenticated) {
+  if (isAuthenticated) {
     return (
       <div className="flex items-center justify-center min-h-screen" style={{ background: "#1c1720" }}>
         <div className="flex flex-col items-center gap-4">

@@ -1,8 +1,8 @@
 "use client";
 
-import { Authenticated, Unauthenticated, AuthLoading } from "convex/react";
+import { Authenticated, Unauthenticated, AuthLoading, useConvexAuth } from "convex/react";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import DashboardShell from "@/components/dashboard/DashboardShell";
 
 function AuthRedirect() {
@@ -14,6 +14,21 @@ function AuthRedirect() {
 }
 
 function LoadingScreen() {
+  const router = useRouter();
+  const { isLoading } = useConvexAuth();
+  const [timedOut, setTimedOut] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setTimedOut(true), 3000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    if (timedOut && isLoading) {
+      router.replace("/sign-in");
+    }
+  }, [timedOut, isLoading, router]);
+
   return (
     <div className="flex items-center justify-center h-screen bg-background">
       <div className="flex flex-col items-center gap-4">
