@@ -489,7 +489,6 @@ export default function WeeklyCalendarGrid({
                             <DropCell
                               key={i}
                               id={`drop_${dateStr}_${timeStr}`}
-                              rowIdx={i}
                             />
                           );
                         }
