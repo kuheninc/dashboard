@@ -135,8 +135,8 @@ export default function BookingBlock({
             >
               {booking.customerName}
             </span>
-            <span className="text-[9px] text-muted-foreground font-data truncate">
-              {booking.startTime}
+            <span className="text-[9px] text-muted-foreground truncate">
+              {booking.serviceName}
             </span>
           </div>
         ) : (

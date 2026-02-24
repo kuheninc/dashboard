@@ -218,7 +218,7 @@ export default function WeeklyCalendarGrid({
   const todayColSpan =
     viewMode === "per-stylist" ? activeStylistsSorted.length : 1;
 
-  const PER_STYLIST_COL_WIDTH = 150; // px per stylist column
+  const PER_STYLIST_COL_WIDTH = 120; // px per stylist column
 
   const gridTemplateColumns =
     viewMode === "per-stylist"
@@ -234,7 +234,7 @@ export default function WeeklyCalendarGrid({
   const renderTimeGutter = (sticky?: boolean) => (
     <div
       className={`border-r border-border relative ${sticky ? "bg-background" : ""}`}
-      style={sticky ? { position: "sticky", left: 0, zIndex: 10 } : undefined}
+      style={sticky ? { position: "sticky", left: 0, zIndex: 25 } : undefined}
     >
       {hours.map((hour) => (
         <div
