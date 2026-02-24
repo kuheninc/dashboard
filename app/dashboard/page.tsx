@@ -21,6 +21,13 @@ export default function DashboardOverview() {
   const todayBookings = useQuery(api.bookings.queries.getByDate, { salonId, date: today });
   const monthBookings = useQuery(api.bookings.queries.getByDateRange, { salonId, startDate, endDate });
 
+  const prevMonthRange = useMemo(() => getDateRangeStr(60), []);
+  const prevMonthBookings = useQuery(api.bookings.queries.getByDateRange, {
+    salonId,
+    startDate: prevMonthRange.startDate,
+    endDate: startDate,
+  });
+
   const stats = useMemo(() => {
     if (!monthBookings || !todayBookings) return null;
 
@@ -32,6 +39,35 @@ export default function DashboardOverview() {
 
     const startMs = new Date(startDate + "T00:00:00").getTime();
     const newCustomers = customers.filter((c) => c._creationTime >= startMs).length;
+
+    // Compute trend deltas vs previous period
+    let prevRevenue = 0;
+    let prevNoShowRate = 0;
+    let prevNewCustomers = 0;
+    let prevBookingCount = 0;
+    if (prevMonthBookings) {
+      const enrichedPrev = enrichBookings(prevMonthBookings, customers, services, stylists);
+      const completedPrev = enrichedPrev.filter((b) => b.status === "completed");
+      prevRevenue = completedPrev.reduce((sum, b) => sum + b.servicePrice, 0);
+      const prevNoShows = enrichedPrev.filter((b) => b.status === "no_show").length;
+      prevNoShowRate = enrichedPrev.length > 0 ? (prevNoShows / enrichedPrev.length) * 100 : 0;
+      const prevStartMs = new Date(prevMonthRange.startDate + "T00:00:00").getTime();
+      prevNewCustomers = customers.filter((c) => c._creationTime >= prevStartMs && c._creationTime < startMs).length;
+      prevBookingCount = prevMonthBookings.length;
+    }
+
+    function computeDelta(current: number, previous: number): { value: string; positive: boolean } | undefined {
+      if (!prevMonthBookings || previous === 0) return current > 0 ? { value: "New", positive: true } : undefined;
+      const pct = ((current - previous) / previous) * 100;
+      return { value: `${Math.abs(pct).toFixed(0)}% vs last month`, positive: pct >= 0 };
+    }
+
+    const bookingsTrend = computeDelta(monthBookings.length, prevBookingCount);
+    const revenueTrend = computeDelta(revenue, prevRevenue);
+    const customersTrend = computeDelta(newCustomers, prevNewCustomers);
+    const noShowTrend = prevMonthBookings
+      ? { value: `${Math.abs(parseFloat(noShowRate) - prevNoShowRate).toFixed(1)}pp vs last month`, positive: parseFloat(noShowRate) <= prevNoShowRate }
+      : undefined;
 
     const dateCountMap = new Map<string, number>();
     for (const b of monthBookings) {
@@ -68,8 +104,12 @@ export default function DashboardOverview() {
       trendData,
       popularityData,
       recentBookings,
+      bookingsTrend,
+      revenueTrend,
+      customersTrend,
+      noShowTrend,
     };
-  }, [monthBookings, todayBookings, customers, services, stylists, startDate, endDate]);
+  }, [monthBookings, todayBookings, prevMonthBookings, customers, services, stylists, startDate, endDate, prevMonthRange.startDate]);
 
   return (
     <div className="space-y-5 max-w-[1400px]">
@@ -81,6 +121,8 @@ export default function DashboardOverview() {
             value={stats ? String(stats.todayCount) : "\u2014"}
             icon={CalendarDays}
             iconColor="text-primary"
+            href="/dashboard/bookings"
+            trend={stats?.bookingsTrend}
           />
         </div>
         <div className="cadence-animate cadence-delay-2">
@@ -89,6 +131,8 @@ export default function DashboardOverview() {
             value={stats ? `RM ${stats.revenue.toLocaleString()}` : "\u2014"}
             icon={DollarSign}
             iconColor="text-[#5a9a6e]"
+            href="/dashboard/analytics"
+            trend={stats?.revenueTrend}
           />
         </div>
         <div className="cadence-animate cadence-delay-3">
@@ -97,6 +141,8 @@ export default function DashboardOverview() {
             value={stats ? String(stats.newCustomers) : "\u2014"}
             icon={UserPlus}
             iconColor="text-[#8a7055]"
+            href="/dashboard/customers"
+            trend={stats?.customersTrend}
           />
         </div>
         <div className="cadence-animate cadence-delay-4">
@@ -104,7 +150,25 @@ export default function DashboardOverview() {
             label="No-Show Rate"
             value={stats ? `${stats.noShowRate}%` : "\u2014"}
             icon={AlertTriangle}
-            iconColor="text-[#c4983e]"
+            iconColor={
+              stats
+                ? parseFloat(stats.noShowRate) > 10
+                  ? "text-[#c45a5a]"
+                  : parseFloat(stats.noShowRate) > 5
+                    ? "text-[#c4983e]"
+                    : "text-[#5a9a6e]"
+                : "text-[#c4983e]"
+            }
+            accentColor={
+              stats
+                ? parseFloat(stats.noShowRate) > 10
+                  ? "#c45a5a"
+                  : parseFloat(stats.noShowRate) > 5
+                    ? "#c4983e"
+                    : "#5a9a6e"
+                : undefined
+            }
+            trend={stats?.noShowTrend}
           />
         </div>
       </div>
@@ -113,7 +177,7 @@ export default function DashboardOverview() {
       <PendingApprovals />
 
       {/* Content grid: charts + right column */}
-      <div className="grid grid-cols-1 xl:grid-cols-[1fr_340px] gap-4">
+      <div className="grid grid-cols-1 xl:grid-cols-[1fr_400px] gap-4">
         {/* Left: charts */}
         <div className="space-y-4 cadence-animate cadence-delay-5">
           <BookingTrendChart data={stats?.trendData ?? []} />

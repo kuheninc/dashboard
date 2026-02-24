@@ -44,13 +44,13 @@ const statusConfig: Record<
   },
   cancelled_customer: {
     label: "Cancelled",
-    color: "#9c9184",
-    bg: "rgba(166,139,107,0.05)",
+    color: "#c45a5a",
+    bg: "rgba(196,90,90,0.06)",
   },
   cancelled_admin: {
     label: "Cancelled",
-    color: "#9c9184",
-    bg: "rgba(166,139,107,0.05)",
+    color: "#c45a5a",
+    bg: "rgba(196,90,90,0.06)",
   },
 };
 

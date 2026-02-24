@@ -142,13 +142,13 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
           <div className="flex items-center gap-2.5 px-3 py-2 rounded-lg bg-[rgba(209,183,153,0.06)]">
             <div className="relative flex-shrink-0">
               <MessageCircle className="w-4 h-4 text-[rgba(242,235,224,0.55)]" />
-              <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 bg-[#5a9a6e] rounded-full" />
+              <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-[#5a9a6e] rounded-full ring-2 ring-[#1c1720]" />
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-[11px] font-medium text-[#f2ebe0]">
                 WhatsApp Bot
               </p>
-              <p className="text-[10px] text-[rgba(242,235,224,0.45)]">
+              <p className="text-[10px] text-[rgba(242,235,224,0.65)]">
                 Active
               </p>
             </div>
@@ -164,7 +164,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
             <div className="text-[12px] font-medium text-[#f2ebe0] truncate">
               {salon.name}
             </div>
-            <div className="text-[10px] text-[rgba(242,235,224,0.45)]">
+            <div className="text-[10px] text-[rgba(242,235,224,0.55)]">
               Owner
             </div>
           </div>

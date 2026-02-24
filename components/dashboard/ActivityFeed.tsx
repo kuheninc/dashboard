@@ -1,4 +1,4 @@
-import { CalendarPlus, XCircle, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { CalendarPlus, XCircle, AlertTriangle, CheckCircle2, Inbox } from "lucide-react";
 import type { EnrichedBooking } from "@/lib/dashboard-helpers";
 
 type ActivityType = "booking" | "cancellation" | "no_show" | "completed";
@@ -6,7 +6,8 @@ type ActivityType = "booking" | "cancellation" | "no_show" | "completed";
 interface ActivityItem {
   id: string;
   type: ActivityType;
-  message: string;
+  customerName: string;
+  detail: string;
   timestamp: number;
 }
 
@@ -18,8 +19,8 @@ const typeConfig = {
   },
   cancellation: {
     icon: XCircle,
-    color: "#9c9184",
-    bg: "rgba(166,139,107,0.05)",
+    color: "#c45a5a",
+    bg: "rgba(196,90,90,0.06)",
   },
   no_show: {
     icon: AlertTriangle,
@@ -33,39 +34,71 @@ const typeConfig = {
   },
 };
 
+function friendlyDate(dateStr: string): string {
+  const now = new Date();
+  const todayStr = now.toLocaleDateString("en-CA", { timeZone: "Asia/Kuala_Lumpur" });
+  const yesterday = new Date(now);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayStr = yesterday.toLocaleDateString("en-CA", { timeZone: "Asia/Kuala_Lumpur" });
+  const tomorrow = new Date(now);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const tomorrowStr = tomorrow.toLocaleDateString("en-CA", { timeZone: "Asia/Kuala_Lumpur" });
+
+  if (dateStr === todayStr) return "today";
+  if (dateStr === yesterdayStr) return "yesterday";
+  if (dateStr === tomorrowStr) return "tomorrow";
+  const d = new Date(dateStr + "T00:00:00");
+  return d.toLocaleDateString("en-MY", { day: "numeric", month: "short" });
+}
+
+function formatTime12h(time24: string): string {
+  const d = new Date(`2000-01-01T${time24}`);
+  return d.toLocaleTimeString("en-MY", { hour: "numeric", minute: "2-digit", hour12: true });
+}
+
 function deriveActivities(bookings: EnrichedBooking[]): ActivityItem[] {
   return bookings.map((b) => {
     let type: ActivityType;
-    let message: string;
+    let detail: string;
+    const dateFriendly = friendlyDate(b.date);
+    const timeFriendly = formatTime12h(b.startTime);
 
     if (b.status === "completed") {
       type = "completed";
-      message = `${b.customerName}'s ${b.serviceName} marked as completed`;
+      detail = `${b.serviceName} marked as completed`;
     } else if (b.status === "no_show") {
       type = "no_show";
-      message = `${b.customerName} did not show up for ${b.serviceName}`;
+      detail = `did not show up for ${b.serviceName}`;
     } else if (b.status === "cancelled_customer" || b.status === "cancelled_admin") {
       type = "cancellation";
-      message = `${b.customerName} cancelled ${b.serviceName} appointment`;
+      detail = `cancelled ${b.serviceName} appointment`;
     } else {
-      // pending_approval, confirmed, reminder_sent, customer_confirmed
       type = "booking";
-      message = `${b.customerName} requested ${b.serviceName} for ${b.date} at ${b.startTime}`;
+      detail = `requested ${b.serviceName} for ${dateFriendly} at ${timeFriendly}`;
     }
 
-    // Use the booking date + startTime to derive a timestamp for sorting
     const ts = new Date(`${b.date}T${b.startTime}:00`).getTime();
 
     return {
       id: b._id,
       type,
-      message,
+      customerName: b.customerName,
+      detail,
       timestamp: ts,
     };
   });
 }
 
 function formatTimestamp(ts: number): string {
+  const now = new Date();
+  const diff = now.getTime() - ts;
+  const mins = Math.floor(diff / 60000);
+  const hours = Math.floor(diff / 3600000);
+
+  if (mins < 1) return "Just now";
+  if (mins < 60) return `${mins}m ago`;
+  if (hours < 24) return `${hours}h ago`;
+
   const d = new Date(ts);
   return d.toLocaleDateString("en-MY", {
     month: "short",
@@ -100,9 +133,11 @@ export default function ActivityFeed({ bookings }: ActivityFeedProps) {
 
       <div className="px-5 py-4 space-y-4">
         {activities.length === 0 ? (
-          <p className="text-[13px] text-muted-foreground text-center py-6">
-            No recent activity
-          </p>
+          <div className="text-center py-8">
+            <Inbox className="w-8 h-8 text-[#9c9184] mx-auto mb-2 opacity-40" />
+            <p className="text-[13px] text-[#9c9184]">No recent activity</p>
+            <p className="text-[11px] text-[#9c9184] mt-0.5 opacity-60">New bookings and updates will appear here</p>
+          </div>
         ) : (
           activities.map((activity) => {
             const config = typeConfig[activity.type];
@@ -120,7 +155,8 @@ export default function ActivityFeed({ bookings }: ActivityFeedProps) {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-[13px] text-foreground leading-snug">
-                    {activity.message}
+                    <span className="font-semibold">{activity.customerName}</span>{" "}
+                    <span className="text-[#6b6058]">{activity.detail}</span>
                   </p>
                   <p className="text-[11px] text-[#9c9184] mt-0.5">
                     {formatTimestamp(activity.timestamp)}
