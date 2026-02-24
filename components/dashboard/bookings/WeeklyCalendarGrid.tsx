@@ -218,9 +218,11 @@ export default function WeeklyCalendarGrid({
   const todayColSpan =
     viewMode === "per-stylist" ? activeStylistsSorted.length : 1;
 
+  const PER_STYLIST_COL_WIDTH = 150; // px per stylist column
+
   const gridTemplateColumns =
     viewMode === "per-stylist"
-      ? `60px repeat(${numColumns}, minmax(0, 1fr))`
+      ? `60px repeat(${numColumns}, ${PER_STYLIST_COL_WIDTH}px)`
       : `60px repeat(7, 1fr)`;
 
   const hours = Array.from(
@@ -228,123 +230,323 @@ export default function WeeklyCalendarGrid({
     (_, i) => START_HOUR + i
   );
 
-  return (
-    <div className="flex flex-col h-full">
-      {/* Day headers */}
-      {viewMode === "unified" ? (
+  // Shared renderers
+  const renderTimeGutter = (sticky?: boolean) => (
+    <div
+      className={`border-r border-border relative ${sticky ? "bg-background" : ""}`}
+      style={sticky ? { position: "sticky", left: 0, zIndex: 10 } : undefined}
+    >
+      {hours.map((hour) => (
         <div
-          className="grid border-b border-border shrink-0"
-          style={{ gridTemplateColumns }}
+          key={hour}
+          className="absolute right-2 text-[10px] font-data text-muted-foreground"
+          style={{ top: (hour - START_HOUR) * HOUR_HEIGHT - 6 }}
         >
-          {/* Empty corner */}
-          <div className="border-r border-border" />
-
-          {days.map((day) => {
-            const dateStr = format(day, "yyyy-MM-dd");
-            const today = isToday(day);
-            return (
-              <div
-                key={dateStr}
-                className={`text-center py-2 border-r border-border last:border-r-0 ${
-                  today ? "bg-primary" : ""
-                }`}
-              >
-                <p
-                  className={`text-[10px] font-label uppercase ${
-                    today ? "text-white/70" : "text-muted-foreground"
-                  }`}
-                >
-                  {format(day, "EEE")}
-                </p>
-                <p
-                  className={`text-[15px] font-data font-medium ${
-                    today ? "text-white" : "text-foreground"
-                  }`}
-                >
-                  {format(day, "d")}
-                </p>
-              </div>
-            );
-          })}
+          {hour === 0
+            ? "12 AM"
+            : hour < 12
+              ? `${hour} AM`
+              : hour === 12
+                ? "12 PM"
+                : `${hour - 12} PM`}
         </div>
-      ) : (
-        <>
-          {/* Date row */}
-          <div
-            className="grid border-b border-border shrink-0"
-            style={{ gridTemplateColumns }}
-          >
-            <div className="border-r border-border" />
-            {days.map((day) => {
-              const dateStr = format(day, "yyyy-MM-dd");
-              const today = isToday(day);
-              return (
-                <div
-                  key={dateStr}
-                  className={`text-center py-1.5 border-r border-border last:border-r-0 ${
-                    today ? "bg-primary" : ""
-                  }`}
-                  style={{ gridColumn: `span ${activeStylistsSorted.length}` }}
-                >
-                  <p
-                    className={`text-[10px] font-label uppercase ${
-                      today ? "text-white/70" : "text-muted-foreground"
-                    }`}
-                  >
-                    {format(day, "EEE")}
-                  </p>
-                  <p
-                    className={`text-[15px] font-data font-medium ${
-                      today ? "text-white" : "text-foreground"
-                    }`}
-                  >
-                    {format(day, "d")}
-                  </p>
-                </div>
-              );
-            })}
-          </div>
-          {/* Stylist row */}
-          <div
-            className="grid border-b border-border shrink-0"
-            style={{ gridTemplateColumns }}
-          >
-            <div className="border-r border-border" />
-            {days.flatMap((day, dayIndex) => {
-              const dateStr = format(day, "yyyy-MM-dd");
-              const today = isToday(day);
-              return activeStylistsSorted.map((stylist, sIdx) => (
-                <div
-                  key={`${dateStr}-${stylist._id}`}
-                  className={`text-center py-1.5 border-r border-border last:border-r-0 ${
-                    today ? "bg-primary" : ""
-                  }`}
-                  style={
-                    sIdx === 0 && dayIndex > 0
-                      ? { borderLeft: "2px solid var(--color-border)" }
-                      : undefined
-                  }
-                >
-                  <p
-                    className={`text-[10px] font-medium truncate px-0.5 ${
-                      today ? "text-white/90" : ""
+      ))}
+    </div>
+  );
+
+  const renderHourLines = () =>
+    hours.flatMap((hour) => {
+      const y = (hour - START_HOUR) * HOUR_HEIGHT;
+      return [
+        <div
+          key={`hline-${hour}`}
+          className="absolute pointer-events-none"
+          style={{
+            top: y,
+            left: 60,
+            right: 0,
+            borderTop: "1px solid var(--color-border)",
+          }}
+        />,
+        <div
+          key={`hline-half-${hour}`}
+          className="absolute pointer-events-none"
+          style={{
+            top: y + HOUR_HEIGHT / 2,
+            left: 60,
+            right: 0,
+            borderTop: "1px dashed rgba(166,139,107,0.12)",
+          }}
+        />,
+      ];
+    });
+
+  const renderTimeIndicator = () =>
+    currentTimeTop !== null && todayColStart !== null ? (
+      <div
+        className="absolute pointer-events-none z-30"
+        style={{
+          top: currentTimeTop,
+          left: `calc(60px + ${todayColStart} * ${viewMode === "per-stylist" ? `${PER_STYLIST_COL_WIDTH}px` : `((100% - 60px) / ${numColumns})`})`,
+          width: `calc(${todayColSpan} * ${viewMode === "per-stylist" ? `${PER_STYLIST_COL_WIDTH}px` : `((100% - 60px) / ${numColumns})`})`,
+        }}
+      >
+        <div className="relative">
+          <div className="absolute -left-1.5 -top-1.5 w-3 h-3 rounded-full bg-[#c45a5a]" />
+          <div className="h-[2px] bg-[#c45a5a] w-full" />
+        </div>
+      </div>
+    ) : null;
+
+  if (viewMode === "per-stylist") {
+    // Per-stylist: single scroll container so headers scroll horizontally with body
+    return (
+      <div className="flex flex-col h-full">
+        <div
+          ref={scrollRef}
+          data-calendar-scroll
+          className="overflow-auto flex-1 relative"
+        >
+          {/* Sticky header group — sticks to top on vertical scroll */}
+          <div className="sticky top-0 z-20 bg-background">
+            {/* Date row */}
+            <div
+              className="grid border-b border-border"
+              style={{ gridTemplateColumns }}
+            >
+              <div
+                className="border-r border-border bg-background"
+                style={{ position: "sticky", left: 0, zIndex: 30 }}
+              />
+              {days.map((day) => {
+                const dateStr = format(day, "yyyy-MM-dd");
+                const today = isToday(day);
+                return (
+                  <div
+                    key={dateStr}
+                    className={`text-center py-1.5 border-r border-border last:border-r-0 ${
+                      today ? "bg-primary" : ""
                     }`}
                     style={{
-                      color: today
-                        ? undefined
-                        : getStylistColor(stylist._id, stylists).text,
+                      gridColumn: `span ${activeStylistsSorted.length}`,
                     }}
                   >
-                    {stylist.name}
-                  </p>
-                </div>
-              ));
-            })}
+                    <p
+                      className={`text-[10px] font-label uppercase ${
+                        today ? "text-white/70" : "text-muted-foreground"
+                      }`}
+                    >
+                      {format(day, "EEE")}
+                    </p>
+                    <p
+                      className={`text-[15px] font-data font-medium ${
+                        today ? "text-white" : "text-foreground"
+                      }`}
+                    >
+                      {format(day, "d")}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+            {/* Stylist row */}
+            <div
+              className="grid border-b border-border"
+              style={{ gridTemplateColumns }}
+            >
+              <div
+                className="border-r border-border bg-background"
+                style={{ position: "sticky", left: 0, zIndex: 30 }}
+              />
+              {days.flatMap((day, dayIndex) => {
+                const dateStr = format(day, "yyyy-MM-dd");
+                const today = isToday(day);
+                return activeStylistsSorted.map((stylist, sIdx) => (
+                  <div
+                    key={`${dateStr}-${stylist._id}`}
+                    className={`text-center py-1.5 border-r border-border last:border-r-0 ${
+                      today ? "bg-primary" : ""
+                    }`}
+                    style={
+                      sIdx === 0 && dayIndex > 0
+                        ? {
+                            borderLeft:
+                              "2px solid var(--color-border)",
+                          }
+                        : undefined
+                    }
+                  >
+                    <p
+                      className={`text-[10px] font-medium truncate px-1 ${
+                        today ? "text-white/90" : ""
+                      }`}
+                      style={{
+                        color: today
+                          ? undefined
+                          : getStylistColor(stylist._id, stylists)
+                              .text,
+                      }}
+                    >
+                      {stylist.name}
+                    </p>
+                  </div>
+                ));
+              })}
+            </div>
           </div>
-        </>
-      )}
 
-      {/* Scrollable grid body */}
+          {/* Body grid */}
+          <div
+            className="grid relative pt-6"
+            style={{
+              gridTemplateColumns,
+              minHeight: TOTAL_SLOTS * ROW_HEIGHT,
+            }}
+          >
+            {renderTimeGutter(true)}
+
+            {days.flatMap((day, dayIndex) => {
+              const dateStr = format(day, "yyyy-MM-dd");
+              const dayBookings = getVisibleBookings(dateStr);
+              const isPast = dateStr < todayStr;
+
+              return activeStylistsSorted.map((stylist, sIdx) => {
+                const stylistBookings = dayBookings.filter(
+                  (b) => b.stylistId === stylist._id
+                );
+
+                return (
+                  <div
+                    key={`${dateStr}-${stylist._id}`}
+                    className="relative border-r border-border last:border-r-0"
+                    style={
+                      sIdx === 0 && dayIndex > 0
+                        ? {
+                            borderLeft:
+                              "2px solid var(--color-border)",
+                          }
+                        : undefined
+                    }
+                  >
+                    {Array.from(
+                      { length: TOTAL_SLOTS },
+                      (_, i) => {
+                        const minutes =
+                          START_HOUR * 60 + i * 15;
+                        const timeStr =
+                          minutesToTimeStr(minutes);
+                        return (
+                          <DropCell
+                            key={i}
+                            id={`drop_${dateStr}_${timeStr}`}
+                          />
+                        );
+                      }
+                    )}
+
+                    {stylistBookings.map((booking) => {
+                      const startMin =
+                        toMinutes(booking.startTime) -
+                        START_HOUR * 60;
+                      const endMin =
+                        toMinutes(booking.endTime) -
+                        START_HOUR * 60;
+                      const top =
+                        (startMin / 15) * ROW_HEIGHT;
+                      const height =
+                        ((endMin - startMin) / 15) *
+                        ROW_HEIGHT;
+
+                      return (
+                        <BookingBlock
+                          key={booking._id}
+                          booking={booking}
+                          stylistColor={getStylistColor(
+                            booking.stylistId,
+                            stylists
+                          )}
+                          top={top}
+                          height={Math.max(
+                            ROW_HEIGHT,
+                            height
+                          )}
+                          left="0%"
+                          width="98%"
+                          isDraggable={
+                            !isPast &&
+                            ACTIVE_STATUSES.includes(
+                              booking.status
+                            )
+                          }
+                          isPast={isPast}
+                          onClick={(e) => {
+                            const rect = (
+                              e.currentTarget as HTMLElement
+                            ).getBoundingClientRect();
+                            onBookingClick(
+                              booking,
+                              rect
+                            );
+                          }}
+                          onResize={
+                            !isPast
+                              ? onBookingResize
+                              : undefined
+                          }
+                          rowHeight={ROW_HEIGHT}
+                        />
+                      );
+                    })}
+                  </div>
+                );
+              });
+            })}
+
+            {renderHourLines()}
+            {renderTimeIndicator()}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Unified mode — headers outside scroll, body scrolls independently
+  return (
+    <div className="flex flex-col h-full">
+      <div
+        className="grid border-b border-border shrink-0"
+        style={{ gridTemplateColumns }}
+      >
+        <div className="border-r border-border" />
+        {days.map((day) => {
+          const dateStr = format(day, "yyyy-MM-dd");
+          const today = isToday(day);
+          return (
+            <div
+              key={dateStr}
+              className={`text-center py-2 border-r border-border last:border-r-0 ${
+                today ? "bg-primary" : ""
+              }`}
+            >
+              <p
+                className={`text-[10px] font-label uppercase ${
+                  today ? "text-white/70" : "text-muted-foreground"
+                }`}
+              >
+                {format(day, "EEE")}
+              </p>
+              <p
+                className={`text-[15px] font-data font-medium ${
+                  today ? "text-white" : "text-foreground"
+                }`}
+              >
+                {format(day, "d")}
+              </p>
+            </div>
+          );
+        })}
+      </div>
+
       <div
         ref={scrollRef}
         data-calendar-scroll
@@ -357,254 +559,81 @@ export default function WeeklyCalendarGrid({
             minHeight: TOTAL_SLOTS * ROW_HEIGHT,
           }}
         >
-          {/* Time gutter */}
-          <div className="border-r border-border relative">
-            {hours.map((hour) => (
+          {renderTimeGutter()}
+
+          {days.map((day) => {
+            const dateStr = format(day, "yyyy-MM-dd");
+            const dayBookings = getVisibleBookings(dateStr);
+            const isPast = dateStr < todayStr;
+            const layoutBlocks = layoutOverlapping(dayBookings);
+
+            return (
               <div
-                key={hour}
-                className="absolute right-2 text-[10px] font-data text-muted-foreground"
-                style={{
-                  top: (hour - START_HOUR) * HOUR_HEIGHT - 6,
-                }}
+                key={dateStr}
+                className="relative border-r border-border last:border-r-0"
               >
-                {hour === 0
-                  ? "12 AM"
-                  : hour < 12
-                    ? `${hour} AM`
-                    : hour === 12
-                      ? "12 PM"
-                      : `${hour - 12} PM`}
-              </div>
-            ))}
-          </div>
-
-          {/* Day columns with drop cells */}
-          {viewMode === "unified"
-            ? days.map((day) => {
-                const dateStr = format(day, "yyyy-MM-dd");
-                const dayBookings = getVisibleBookings(dateStr);
-                const isPast = dateStr < todayStr;
-                const layoutBlocks = layoutOverlapping(dayBookings);
-
-                return (
-                  <div
-                    key={dateStr}
-                    className="relative border-r border-border last:border-r-0"
-                  >
-                    {/* Drop cells */}
-                    {Array.from({ length: TOTAL_SLOTS }, (_, i) => {
-                      const minutes =
-                        START_HOUR * 60 + i * 15;
-                      const timeStr = minutesToTimeStr(minutes);
-                      return (
-                        <DropCell
-                          key={i}
-                          id={`drop_${dateStr}_${timeStr}`}
-                        />
-                      );
-                    })}
-
-                    {/* Booking blocks */}
-                    {layoutBlocks.map(
-                      ({ booking, columnIndex, totalColumns }) => {
-                        const startMin =
-                          toMinutes(booking.startTime) -
-                          START_HOUR * 60;
-                        const endMin =
-                          toMinutes(booking.endTime) -
-                          START_HOUR * 60;
-                        const top =
-                          (startMin / 15) * ROW_HEIGHT;
-                        const height =
-                          ((endMin - startMin) / 15) *
-                          ROW_HEIGHT;
-                        const widthPct =
-                          100 / totalColumns;
-                        const leftPct =
-                          columnIndex * widthPct;
-
-                        return (
-                          <BookingBlock
-                            key={booking._id}
-                            booking={booking}
-                            stylistColor={getStylistColor(
-                              booking.stylistId,
-                              stylists
-                            )}
-                            top={top}
-                            height={Math.max(
-                              ROW_HEIGHT,
-                              height
-                            )}
-                            left={`${leftPct}%`}
-                            width={`${widthPct - 1}%`}
-                            isDraggable={
-                              !isPast &&
-                              ACTIVE_STATUSES.includes(
-                                booking.status
-                              )
-                            }
-                            isPast={isPast}
-                            onClick={(e) => {
-                              const rect = (
-                                e.currentTarget as HTMLElement
-                              ).getBoundingClientRect();
-                              onBookingClick(
-                                booking,
-                                rect
-                              );
-                            }}
-                            onResize={
-                              !isPast
-                                ? onBookingResize
-                                : undefined
-                            }
-                            rowHeight={ROW_HEIGHT}
-                          />
-                        );
-                      }
-                    )}
-                  </div>
-                );
-              })
-            : // Per-stylist mode
-              days.flatMap((day, dayIndex) => {
-                const dateStr = format(day, "yyyy-MM-dd");
-                const dayBookings = getVisibleBookings(dateStr);
-                const isPast = dateStr < todayStr;
-
-                return activeStylistsSorted.map((stylist, sIdx) => {
-                  const stylistBookings = dayBookings.filter(
-                    (b) => b.stylistId === stylist._id
-                  );
-
+                {Array.from({ length: TOTAL_SLOTS }, (_, i) => {
+                  const minutes = START_HOUR * 60 + i * 15;
+                  const timeStr = minutesToTimeStr(minutes);
                   return (
-                    <div
-                      key={`${dateStr}-${stylist._id}`}
-                      className="relative border-r border-border last:border-r-0"
-                      style={
-                        sIdx === 0 && dayIndex > 0
-                          ? { borderLeft: "2px solid var(--color-border)" }
-                          : undefined
-                      }
-                    >
-                      {Array.from(
-                        { length: TOTAL_SLOTS },
-                        (_, i) => {
-                          const minutes =
-                            START_HOUR * 60 + i * 15;
-                          const timeStr =
-                            minutesToTimeStr(minutes);
-                          return (
-                            <DropCell
-                              key={i}
-                              id={`drop_${dateStr}_${timeStr}`}
-                            />
-                          );
-                        }
-                      )}
-
-                      {stylistBookings.map((booking) => {
-                        const startMin =
-                          toMinutes(booking.startTime) -
-                          START_HOUR * 60;
-                        const endMin =
-                          toMinutes(booking.endTime) -
-                          START_HOUR * 60;
-                        const top =
-                          (startMin / 15) * ROW_HEIGHT;
-                        const height =
-                          ((endMin - startMin) / 15) *
-                          ROW_HEIGHT;
-
-                        return (
-                          <BookingBlock
-                            key={booking._id}
-                            booking={booking}
-                            stylistColor={getStylistColor(
-                              booking.stylistId,
-                              stylists
-                            )}
-                            top={top}
-                            height={Math.max(
-                              ROW_HEIGHT,
-                              height
-                            )}
-                            left="0%"
-                            width="98%"
-                            isDraggable={
-                              !isPast &&
-                              ACTIVE_STATUSES.includes(
-                                booking.status
-                              )
-                            }
-                            isPast={isPast}
-                            onClick={(e) => {
-                              const rect = (
-                                e.currentTarget as HTMLElement
-                              ).getBoundingClientRect();
-                              onBookingClick(
-                                booking,
-                                rect
-                              );
-                            }}
-                            onResize={
-                              !isPast
-                                ? onBookingResize
-                                : undefined
-                            }
-                            rowHeight={ROW_HEIGHT}
-                          />
-                        );
-                      })}
-                    </div>
+                    <DropCell
+                      key={i}
+                      id={`drop_${dateStr}_${timeStr}`}
+                    />
                   );
-                });
-              })}
+                })}
 
-          {/* Hour and half-hour grid lines */}
-          {hours.flatMap((hour) => {
-            const y = (hour - START_HOUR) * HOUR_HEIGHT;
-            return [
-              <div
-                key={`hline-${hour}`}
-                className="absolute pointer-events-none"
-                style={{
-                  top: y,
-                  left: 60,
-                  right: 0,
-                  borderTop: "1px solid var(--color-border)",
-                }}
-              />,
-              <div
-                key={`hline-half-${hour}`}
-                className="absolute pointer-events-none"
-                style={{
-                  top: y + HOUR_HEIGHT / 2,
-                  left: 60,
-                  right: 0,
-                  borderTop: "1px dashed rgba(166,139,107,0.12)",
-                }}
-              />,
-            ];
+                {layoutBlocks.map(
+                  ({ booking, columnIndex, totalColumns }) => {
+                    const startMin =
+                      toMinutes(booking.startTime) -
+                      START_HOUR * 60;
+                    const endMin =
+                      toMinutes(booking.endTime) -
+                      START_HOUR * 60;
+                    const top = (startMin / 15) * ROW_HEIGHT;
+                    const height =
+                      ((endMin - startMin) / 15) * ROW_HEIGHT;
+                    const widthPct = 100 / totalColumns;
+                    const leftPct = columnIndex * widthPct;
+
+                    return (
+                      <BookingBlock
+                        key={booking._id}
+                        booking={booking}
+                        stylistColor={getStylistColor(
+                          booking.stylistId,
+                          stylists
+                        )}
+                        top={top}
+                        height={Math.max(ROW_HEIGHT, height)}
+                        left={`${leftPct}%`}
+                        width={`${widthPct - 1}%`}
+                        isDraggable={
+                          !isPast &&
+                          ACTIVE_STATUSES.includes(booking.status)
+                        }
+                        isPast={isPast}
+                        onClick={(e) => {
+                          const rect = (
+                            e.currentTarget as HTMLElement
+                          ).getBoundingClientRect();
+                          onBookingClick(booking, rect);
+                        }}
+                        onResize={
+                          !isPast ? onBookingResize : undefined
+                        }
+                        rowHeight={ROW_HEIGHT}
+                      />
+                    );
+                  }
+                )}
+              </div>
+            );
           })}
 
-          {/* Current time indicator */}
-          {currentTimeTop !== null && todayColStart !== null && (
-            <div
-              className="absolute pointer-events-none z-30"
-              style={{
-                top: currentTimeTop,
-                left: `calc(60px + ${todayColStart} * ((100% - 60px) / ${numColumns}))`,
-                width: `calc(${todayColSpan} * ((100% - 60px) / ${numColumns}))`,
-              }}
-            >
-              <div className="relative">
-                <div className="absolute -left-1.5 -top-1.5 w-3 h-3 rounded-full bg-[#c45a5a]" />
-                <div className="h-[2px] bg-[#c45a5a] w-full" />
-              </div>
-            </div>
-          )}
+          {renderHourLines()}
+          {renderTimeIndicator()}
         </div>
       </div>
     </div>
