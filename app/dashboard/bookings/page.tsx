@@ -8,6 +8,7 @@ import { getTodayDateStr, getDateRangeStr } from "@/lib/dashboard-helpers";
 import PendingApprovals from "@/components/dashboard/bookings/PendingApprovals";
 import BookingTable from "@/components/dashboard/bookings/BookingTable";
 import CalendarView from "@/components/dashboard/bookings/CalendarView";
+import BookingLogs from "@/components/dashboard/bookings/BookingLogs";
 import StatCard from "@/components/dashboard/StatCard";
 import { CalendarDays, Clock, CheckCircle2, XCircle } from "lucide-react";
 
@@ -22,7 +23,7 @@ export default function BookingsPage() {
   const weekBookings = useQuery(api.bookings.queries.getByDateRange, { salonId, startDate: weekStart, endDate: weekEnd });
   const monthBookings = useQuery(api.bookings.queries.getByDateRange, { salonId, startDate: monthStart, endDate: monthEnd });
 
-  const [tab, setTab] = useState<"list" | "calendar">("calendar");
+  const [tab, setTab] = useState<"calendar" | "list" | "logs">("calendar");
 
   const cancelledCount = useMemo(() => {
     if (!monthBookings) return 0;
@@ -75,9 +76,21 @@ export default function BookingsPage() {
           >
             Upcoming
           </button>
+          <button
+            onClick={() => setTab("logs")}
+            className={`px-3.5 py-1.5 rounded-md text-[12px] font-medium transition-colors ${
+              tab === "logs"
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Booking Logs
+          </button>
         </div>
 
-        {tab === "list" ? <BookingTable /> : <CalendarView />}
+        {tab === "calendar" && <CalendarView />}
+        {tab === "list" && <BookingTable />}
+        {tab === "logs" && <BookingLogs />}
       </div>
     </div>
   );
