@@ -56,16 +56,6 @@ export default function BookingsPage() {
       <div className="cadence-animate cadence-delay-5">
         <div className="flex gap-1 bg-muted/40 p-0.5 rounded-lg border border-border w-fit mb-4">
           <button
-            onClick={() => setTab("list")}
-            className={`px-3.5 py-1.5 rounded-md text-[12px] font-medium transition-colors ${
-              tab === "list"
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            List View
-          </button>
-          <button
             onClick={() => setTab("calendar")}
             className={`px-3.5 py-1.5 rounded-md text-[12px] font-medium transition-colors ${
               tab === "calendar"
@@ -74,6 +64,16 @@ export default function BookingsPage() {
             }`}
           >
             Calendar View
+          </button>
+          <button
+            onClick={() => setTab("list")}
+            className={`px-3.5 py-1.5 rounded-md text-[12px] font-medium transition-colors ${
+              tab === "list"
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            List View
           </button>
         </div>
 
