@@ -22,7 +22,7 @@ export default function BookingsPage() {
   const weekBookings = useQuery(api.bookings.queries.getByDateRange, { salonId, startDate: weekStart, endDate: weekEnd });
   const monthBookings = useQuery(api.bookings.queries.getByDateRange, { salonId, startDate: monthStart, endDate: monthEnd });
 
-  const [tab, setTab] = useState<"list" | "calendar">("list");
+  const [tab, setTab] = useState<"list" | "calendar">("calendar");
 
   const cancelledCount = useMemo(() => {
     if (!monthBookings) return 0;

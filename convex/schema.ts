@@ -1,7 +1,19 @@
 import { defineSchema, defineTable } from "convex/server";
+import { authTables } from "@convex-dev/auth/server";
 import { v } from "convex/values";
 
 export default defineSchema({
+  ...authTables,
+
+  salonMembers: defineTable({
+    userId: v.id("users"),
+    salonId: v.id("salons"),
+    role: v.union(v.literal("owner"), v.literal("admin")),
+  })
+    .index("by_user", ["userId"])
+    .index("by_salon", ["salonId"])
+    .index("by_user_salon", ["userId", "salonId"]),
+
   salons: defineTable({
     name: v.string(),
     waPhoneNumberId: v.string(),
@@ -11,6 +23,7 @@ export default defineSchema({
     admins: v.optional(
       v.array(
         v.object({
+          email: v.string(),
           username: v.string(),
           passwordHash: v.string(),
           phone: v.string(),

@@ -30,7 +30,7 @@ export default function SalonDetailsStep({ data, onChange }: Props) {
       ...data,
       admins: [
         ...data.admins,
-        { username: "", password: "", phone: "", role: "admin" },
+        { email: "", username: "", password: "", phone: "", role: "admin" },
       ],
     });
     setShowPasswords((prev) => [...prev, false]);
@@ -177,6 +177,21 @@ export default function SalonDetailsStep({ data, onChange }: Props) {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="sm:col-span-2">
+                  <label className="font-label text-muted-foreground mb-1.5 block text-[12px]">
+                    Email *
+                  </label>
+                  <input
+                    type="email"
+                    value={admin.email}
+                    onChange={(e) =>
+                      updateAdmin(index, "email", e.target.value)
+                    }
+                    className={`${inputClass} text-[13px]`}
+                    placeholder="admin@yoursalon.com"
+                  />
+                </div>
+
                 <div>
                   <label className="font-label text-muted-foreground mb-1.5 block text-[12px]">
                     Username *

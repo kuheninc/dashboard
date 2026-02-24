@@ -1,4 +1,5 @@
 import { mutation } from "../_generated/server";
+import { getAuthUserId } from "@convex-dev/auth/server";
 import { v } from "convex/values";
 
 export const create = mutation({
@@ -9,6 +10,7 @@ export const create = mutation({
     waAccessToken: v.string(),
     admins: v.array(
       v.object({
+        email: v.string(),
         username: v.string(),
         passwordHash: v.string(),
         phone: v.string(),
@@ -29,6 +31,7 @@ export const create = mutation({
     timezone: v.string(),
   },
   handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
     const { admins, ...rest } = args;
 
     // Check for duplicate usernames within this salon
@@ -40,12 +43,24 @@ export const create = mutation({
     // Derive adminPhones from admins for backward compatibility
     const adminPhones = admins.map((a) => a.phone);
 
-    return await ctx.db.insert("salons", {
+    const salonId = await ctx.db.insert("salons", {
       ...rest,
       admins,
       adminPhones,
       isActive: true,
     });
+
+    // Link the authenticated user to this salon
+    if (userId) {
+      const ownerAdmin = admins.find((a) => a.role === "owner");
+      await ctx.db.insert("salonMembers", {
+        userId,
+        salonId,
+        role: ownerAdmin ? "owner" : "admin",
+      });
+    }
+
+    return salonId;
   },
 });
 

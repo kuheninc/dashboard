@@ -27,6 +27,7 @@ export interface StylistEntry {
 }
 
 export interface AdminEntry {
+  email: string;
   username: string;
   password: string;
   phone: string;
@@ -81,7 +82,7 @@ export const INITIAL_FORM_DATA: OnboardingFormData = {
   waPhoneNumberId: "",
   waBusinessAccountId: "",
   waAccessToken: "",
-  admins: [{ username: "", password: "", phone: "", role: "owner" }],
+  admins: [{ email: "", username: "", password: "", phone: "", role: "owner" }],
   timezone: "Asia/Kuala_Lumpur",
   openingHours: DEFAULT_OPENING_HOURS,
   services: [{ name: "", nameBM: "", durationMinutes: 30, priceRM: 0 }],

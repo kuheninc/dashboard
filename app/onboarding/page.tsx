@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useMutation } from "convex/react";
+import { useAuthActions } from "@convex-dev/auth/react";
 import { api } from "@/convex/_generated/api";
 import { OnboardingFormData, INITIAL_FORM_DATA } from "@/lib/types";
 import SalonDetailsStep from "@/components/onboarding/SalonDetailsStep";
@@ -41,6 +42,7 @@ export default function OnboardingPage() {
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
+  const { signIn } = useAuthActions();
   const createSalon = useMutation(api.salons.mutations.create);
   const createService = useMutation(api.services.mutations.create);
   const createStylist = useMutation(api.stylists.mutations.create);
@@ -50,8 +52,9 @@ export default function OnboardingPage() {
       case 0: {
         const hasValidAdmin = data.admins.some(
           (a) =>
+            a.email.trim() &&
             a.username.trim() &&
-            a.password.length >= 6 &&
+            a.password.length >= 8 &&
             a.phone.trim()
         );
         return !!(
@@ -93,7 +96,7 @@ export default function OnboardingPage() {
 
     try {
       const validAdmins = data.admins.filter(
-        (a) => a.username.trim() && a.password && a.phone.trim()
+        (a) => a.email.trim() && a.username.trim() && a.password && a.phone.trim()
       );
 
       // Check unique usernames
@@ -102,9 +105,18 @@ export default function OnboardingPage() {
         throw new Error("Each admin must have a unique username");
       }
 
-      // Hash passwords before sending
+      // Sign up the owner (first admin) with Convex Auth
+      const owner = validAdmins.find((a) => a.role === "owner") ?? validAdmins[0];
+      await signIn("password", {
+        email: owner.email.trim(),
+        password: owner.password,
+        flow: "signUp",
+      });
+
+      // Hash passwords before sending (for WhatsApp admin matching)
       const adminsWithHash = await Promise.all(
         validAdmins.map(async (a) => ({
+          email: a.email.trim(),
           username: a.username.trim(),
           passwordHash: await hashPassword(a.password),
           phone: a.phone.trim(),

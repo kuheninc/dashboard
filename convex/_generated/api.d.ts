@@ -11,6 +11,7 @@
 import type * as ai_prompts from "../ai/prompts.js";
 import type * as ai_router from "../ai/router.js";
 import type * as ai_tools from "../ai/tools.js";
+import type * as auth from "../auth.js";
 import type * as bookings_actions from "../bookings/actions.js";
 import type * as bookings_internal from "../bookings/internal.js";
 import type * as bookings_mutations from "../bookings/mutations.js";
@@ -28,6 +29,8 @@ import type * as http from "../http.js";
 import type * as messages_internal from "../messages/internal.js";
 import type * as messages_mutations from "../messages/mutations.js";
 import type * as messages_queries from "../messages/queries.js";
+import type * as salonMembers_mutations from "../salonMembers/mutations.js";
+import type * as salonMembers_queries from "../salonMembers/queries.js";
 import type * as salons_internal from "../salons/internal.js";
 import type * as salons_mutations from "../salons/mutations.js";
 import type * as salons_queries from "../salons/queries.js";
@@ -56,6 +59,7 @@ declare const fullApi: ApiFromModules<{
   "ai/prompts": typeof ai_prompts;
   "ai/router": typeof ai_router;
   "ai/tools": typeof ai_tools;
+  auth: typeof auth;
   "bookings/actions": typeof bookings_actions;
   "bookings/internal": typeof bookings_internal;
   "bookings/mutations": typeof bookings_mutations;
@@ -73,6 +77,8 @@ declare const fullApi: ApiFromModules<{
   "messages/internal": typeof messages_internal;
   "messages/mutations": typeof messages_mutations;
   "messages/queries": typeof messages_queries;
+  "salonMembers/mutations": typeof salonMembers_mutations;
+  "salonMembers/queries": typeof salonMembers_queries;
   "salons/internal": typeof salons_internal;
   "salons/mutations": typeof salons_mutations;
   "salons/queries": typeof salons_queries;

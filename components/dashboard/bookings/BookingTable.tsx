@@ -36,15 +36,30 @@ function getDateRange(): { startDate: string; endDate: string } {
   const now = new Date();
   const tz = "Asia/Kuala_Lumpur";
 
-  const start = new Date(now);
-  start.setDate(now.getDate() - 30);
-  const startDate = start.toLocaleDateString("en-CA", { timeZone: tz });
+  const startDate = now.toLocaleDateString("en-CA", { timeZone: tz });
 
   const end = new Date(now);
-  end.setDate(now.getDate() + 7);
+  end.setDate(now.getDate() + 30);
   const endDate = end.toLocaleDateString("en-CA", { timeZone: tz });
 
   return { startDate, endDate };
+}
+
+function getDayLabel(dateStr: string, todayStr: string): string {
+  const today = new Date(todayStr + "T00:00:00");
+  const tomorrow = new Date(today);
+  tomorrow.setDate(today.getDate() + 1);
+  const tomorrowStr = tomorrow.toLocaleDateString("en-CA");
+
+  if (dateStr === todayStr) return "Today";
+  if (dateStr === tomorrowStr) return "Tomorrow";
+
+  const d = new Date(dateStr + "T00:00:00");
+  return d.toLocaleDateString("en-MY", {
+    weekday: "long",
+    month: "short",
+    day: "numeric",
+  });
 }
 
 function getInitials(name: string): string {
@@ -194,6 +209,9 @@ function ActionsDropdown({
 export default function BookingTable() {
   const { salonId, customers, services, stylists } = useDashboard();
   const { startDate, endDate } = useMemo(() => getDateRange(), []);
+  const todayStr = useMemo(() => {
+    return new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kuala_Lumpur" });
+  }, []);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<BookingStatus | "all">("all");
 
@@ -228,7 +246,20 @@ export default function BookingTable() {
       }
       return true;
     })
-    .sort((a, b) => b.date.localeCompare(a.date) || b.startTime.localeCompare(a.startTime));
+    .sort((a, b) => a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime));
+
+  // Group bookings by date
+  const grouped = new Map<string, typeof filtered>();
+  for (const booking of filtered) {
+    const existing = grouped.get(booking.date);
+    if (existing) {
+      existing.push(booking);
+    } else {
+      grouped.set(booking.date, [booking]);
+    }
+  }
+
+  const sortedDates = Array.from(grouped.keys()).sort();
 
   return (
     <div className="space-y-5">
@@ -264,98 +295,115 @@ export default function BookingTable() {
         </div>
       </div>
 
-      {/* Table */}
-      <div className="bg-card border border-border rounded-xl overflow-hidden transition-shadow hover:shadow-[0_2px_12px_rgba(42,36,32,0.06)]">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[700px]">
-            <thead>
-              <tr className="bg-[rgba(166,139,107,0.05)]">
-                <th className="text-left font-label text-[#9c9184] px-4 lg:px-5 py-3">
-                  Date
-                </th>
-                <th className="text-left font-label text-[#9c9184] px-4 lg:px-5 py-3">
-                  Time
-                </th>
-                <th className="text-left font-label text-[#9c9184] px-4 lg:px-5 py-3">
-                  Customer
-                </th>
-                <th className="text-left font-label text-[#9c9184] px-4 lg:px-5 py-3">
-                  Service
-                </th>
-                <th className="text-left font-label text-[#9c9184] px-4 lg:px-5 py-3 hidden lg:table-cell">
-                  Stylist
-                </th>
-                <th className="text-left font-label text-[#9c9184] px-4 lg:px-5 py-3 hidden sm:table-cell">
-                  Price
-                </th>
-                <th className="text-left font-label text-[#9c9184] px-4 lg:px-5 py-3">
-                  Status
-                </th>
-                <th className="w-10 px-2 py-3" />
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((booking) => (
-                <tr
-                  key={booking._id}
-                  className="border-t border-border hover:bg-[rgba(166,139,107,0.05)] transition-colors"
-                >
-                  <td className="text-[13px] text-foreground font-data px-4 lg:px-5 py-3 whitespace-nowrap">
-                    {booking.date}
-                  </td>
-                  <td className="text-[13px] px-4 lg:px-5 py-3 whitespace-nowrap">
-                    <span className="font-medium text-foreground font-data">
-                      {booking.startTime}
-                    </span>
-                    <span className="text-[#9c9184] mx-1">-</span>
-                    <span className="font-medium text-foreground font-data">
-                      {booking.endTime}
-                    </span>
-                  </td>
-                  <td className="text-[13px] px-4 lg:px-5 py-3">
-                    <div className="flex items-center gap-2.5">
-                      <div
-                        className={`w-7 h-7 rounded-md flex items-center justify-center text-[12px] font-semibold flex-shrink-0 ${getAvatarColor(booking.customerName)}`}
-                      >
-                        {getInitials(booking.customerName)}
-                      </div>
-                      <span className="font-medium text-foreground truncate max-w-[120px] lg:max-w-none">
-                        {booking.customerName}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="text-[13px] text-muted-foreground px-4 lg:px-5 py-3 truncate max-w-[140px]">
-                    {booking.serviceName}
-                  </td>
-                  <td className="text-[13px] text-muted-foreground px-4 lg:px-5 py-3 hidden lg:table-cell">
-                    {booking.stylistName}
-                  </td>
-                  <td className="text-[13px] text-foreground font-data px-4 lg:px-5 py-3 hidden sm:table-cell whitespace-nowrap">
-                    RM {booking.servicePrice}
-                  </td>
-                  <td className="text-[13px] px-4 lg:px-5 py-3">
-                    <BookingStatusBadge status={booking.status} />
-                  </td>
-                  <td className="px-2 py-3">
-                    <ActionsDropdown
-                      bookingId={booking._id as Id<"bookings">}
-                      status={booking.status as BookingStatus}
-                      feedbackRequestedAt={booking.feedbackRequestedAt}
-                    />
-                  </td>
-                </tr>
-              ))}
-              {filtered.length === 0 && (
-                <tr>
-                  <td colSpan={8} className="text-center py-12 text-[13px] text-[#9c9184]">
-                    No bookings found
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+      {/* Day-grouped sections */}
+      {sortedDates.length === 0 ? (
+        <div className="bg-card border border-border rounded-xl py-12 text-center text-[13px] text-[#9c9184]">
+          No upcoming bookings
         </div>
-      </div>
+      ) : (
+        <div className="space-y-4">
+          {sortedDates.map((dateStr) => {
+            const dayBookings = grouped.get(dateStr)!;
+            const label = getDayLabel(dateStr, todayStr);
+            const isToday = dateStr === todayStr;
+
+            return (
+              <div key={dateStr}>
+                {/* Day header */}
+                <div className="flex items-center gap-3 mb-2">
+                  <h3 className={`text-[13px] font-semibold ${isToday ? "text-primary" : "text-foreground"}`}>
+                    {label}
+                  </h3>
+                  <span className="text-[11px] text-[#9c9184] font-medium">
+                    {dayBookings.length} booking{dayBookings.length !== 1 ? "s" : ""}
+                  </span>
+                  <div className="flex-1 h-px bg-border" />
+                </div>
+
+                {/* Table for this day */}
+                <div className="bg-card border border-border rounded-xl overflow-hidden transition-shadow hover:shadow-[0_2px_12px_rgba(42,36,32,0.06)]">
+                  <div className="overflow-x-auto">
+                    <table className="w-full min-w-[600px]">
+                      <thead>
+                        <tr className="bg-[rgba(166,139,107,0.05)]">
+                          <th className="text-left font-label text-[#9c9184] px-4 lg:px-5 py-2.5">
+                            Time
+                          </th>
+                          <th className="text-left font-label text-[#9c9184] px-4 lg:px-5 py-2.5">
+                            Customer
+                          </th>
+                          <th className="text-left font-label text-[#9c9184] px-4 lg:px-5 py-2.5">
+                            Service
+                          </th>
+                          <th className="text-left font-label text-[#9c9184] px-4 lg:px-5 py-2.5 hidden lg:table-cell">
+                            Stylist
+                          </th>
+                          <th className="text-left font-label text-[#9c9184] px-4 lg:px-5 py-2.5 hidden sm:table-cell">
+                            Price
+                          </th>
+                          <th className="text-left font-label text-[#9c9184] px-4 lg:px-5 py-2.5">
+                            Status
+                          </th>
+                          <th className="w-10 px-2 py-2.5" />
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {dayBookings.map((booking) => (
+                          <tr
+                            key={booking._id}
+                            className="border-t border-border hover:bg-[rgba(166,139,107,0.05)] transition-colors"
+                          >
+                            <td className="text-[13px] px-4 lg:px-5 py-3 whitespace-nowrap">
+                              <span className="font-medium text-foreground font-data">
+                                {booking.startTime}
+                              </span>
+                              <span className="text-[#9c9184] mx-1">-</span>
+                              <span className="font-medium text-foreground font-data">
+                                {booking.endTime}
+                              </span>
+                            </td>
+                            <td className="text-[13px] px-4 lg:px-5 py-3">
+                              <div className="flex items-center gap-2.5">
+                                <div
+                                  className={`w-7 h-7 rounded-md flex items-center justify-center text-[12px] font-semibold flex-shrink-0 ${getAvatarColor(booking.customerName)}`}
+                                >
+                                  {getInitials(booking.customerName)}
+                                </div>
+                                <span className="font-medium text-foreground truncate max-w-[120px] lg:max-w-none">
+                                  {booking.customerName}
+                                </span>
+                              </div>
+                            </td>
+                            <td className="text-[13px] text-muted-foreground px-4 lg:px-5 py-3 truncate max-w-[140px]">
+                              {booking.serviceName}
+                            </td>
+                            <td className="text-[13px] text-muted-foreground px-4 lg:px-5 py-3 hidden lg:table-cell">
+                              {booking.stylistName}
+                            </td>
+                            <td className="text-[13px] text-foreground font-data px-4 lg:px-5 py-3 hidden sm:table-cell whitespace-nowrap">
+                              RM {booking.servicePrice}
+                            </td>
+                            <td className="text-[13px] px-4 lg:px-5 py-3">
+                              <BookingStatusBadge status={booking.status} />
+                            </td>
+                            <td className="px-2 py-3">
+                              <ActionsDropdown
+                                bookingId={booking._id as Id<"bookings">}
+                                status={booking.status as BookingStatus}
+                                feedbackRequestedAt={booking.feedbackRequestedAt}
+                              />
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
