@@ -159,15 +159,7 @@ export default function DashboardOverview() {
                     : "text-[#5a9a6e]"
                 : "text-[#c4983e]"
             }
-            accentColor={
-              stats
-                ? parseFloat(stats.noShowRate) > 10
-                  ? "#c45a5a"
-                  : parseFloat(stats.noShowRate) > 5
-                    ? "#c4983e"
-                    : "#5a9a6e"
-                : undefined
-            }
+            href="/dashboard/customers"
             trend={stats?.noShowTrend}
           />
         </div>
