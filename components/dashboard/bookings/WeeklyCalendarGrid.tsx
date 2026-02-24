@@ -8,7 +8,7 @@ import BookingBlock, { type StylistColor } from "./BookingBlock";
 import { format, isToday } from "date-fns";
 
 const START_HOUR = 7;
-const END_HOUR = 22;
+const END_HOUR = 23;
 const TOTAL_SLOTS = (END_HOUR - START_HOUR) * 4; // 60 slots (15-min each)
 const ROW_HEIGHT = 16; // px per 15-min slot
 const HOUR_HEIGHT = ROW_HEIGHT * 4; // 64px per hour
@@ -397,7 +397,7 @@ export default function WeeklyCalendarGrid({
 
           {/* Body grid */}
           <div
-            className="grid relative pt-6"
+            className="grid relative pt-6 pb-6"
             style={{
               gridTemplateColumns,
               minHeight: TOTAL_SLOTS * ROW_HEIGHT,
@@ -550,7 +550,7 @@ export default function WeeklyCalendarGrid({
       <div
         ref={scrollRef}
         data-calendar-scroll
-        className="overflow-x-auto flex-1 relative pt-6"
+        className="overflow-x-auto flex-1 relative pt-6 pb-6"
       >
         <div
           className="grid relative"
