@@ -220,7 +220,7 @@ export default function WeeklyCalendarGrid({
 
   const gridTemplateColumns =
     viewMode === "per-stylist"
-      ? `60px repeat(${numColumns}, minmax(80px, 1fr))`
+      ? `60px repeat(${numColumns}, minmax(0, 1fr))`
       : `60px repeat(7, 1fr)`;
 
   const hours = Array.from(
@@ -310,18 +310,23 @@ export default function WeeklyCalendarGrid({
             style={{ gridTemplateColumns }}
           >
             <div className="border-r border-border" />
-            {days.flatMap((day) => {
+            {days.flatMap((day, dayIndex) => {
               const dateStr = format(day, "yyyy-MM-dd");
               const today = isToday(day);
-              return activeStylistsSorted.map((stylist) => (
+              return activeStylistsSorted.map((stylist, sIdx) => (
                 <div
                   key={`${dateStr}-${stylist._id}`}
                   className={`text-center py-1.5 border-r border-border last:border-r-0 ${
                     today ? "bg-primary" : ""
                   }`}
+                  style={
+                    sIdx === 0 && dayIndex > 0
+                      ? { borderLeft: "2px solid var(--color-border)" }
+                      : undefined
+                  }
                 >
                   <p
-                    className={`text-[10px] font-medium truncate px-1 ${
+                    className={`text-[10px] font-medium truncate px-0.5 ${
                       today ? "text-white/90" : ""
                     }`}
                     style={{
@@ -463,12 +468,12 @@ export default function WeeklyCalendarGrid({
                 );
               })
             : // Per-stylist mode
-              days.flatMap((day) => {
+              days.flatMap((day, dayIndex) => {
                 const dateStr = format(day, "yyyy-MM-dd");
                 const dayBookings = getVisibleBookings(dateStr);
                 const isPast = dateStr < todayStr;
 
-                return activeStylistsSorted.map((stylist) => {
+                return activeStylistsSorted.map((stylist, sIdx) => {
                   const stylistBookings = dayBookings.filter(
                     (b) => b.stylistId === stylist._id
                   );
@@ -477,6 +482,11 @@ export default function WeeklyCalendarGrid({
                     <div
                       key={`${dateStr}-${stylist._id}`}
                       className="relative border-r border-border last:border-r-0"
+                      style={
+                        sIdx === 0 && dayIndex > 0
+                          ? { borderLeft: "2px solid var(--color-border)" }
+                          : undefined
+                      }
                     >
                       {Array.from(
                         { length: TOTAL_SLOTS },
