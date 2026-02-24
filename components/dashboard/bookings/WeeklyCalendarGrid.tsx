@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useEffect } from "react";
+import { useMemo, useRef } from "react";
 import { useDroppable } from "@dnd-kit/core";
 import type { Doc } from "@/convex/_generated/dataModel";
 import type { EnrichedBooking } from "@/lib/dashboard-helpers";
@@ -170,18 +170,6 @@ export default function WeeklyCalendarGrid({
 }: WeeklyCalendarGridProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll to current time on mount
-  useEffect(() => {
-    if (!scrollRef.current) return;
-    const now = new Date();
-    const myt = new Date(
-      now.toLocaleString("en-US", { timeZone: "Asia/Kuala_Lumpur" })
-    );
-    const minutesSinceStart = (myt.getHours() - START_HOUR) * 60 + myt.getMinutes();
-    const scrollTo = Math.max(0, (minutesSinceStart / 15) * ROW_HEIGHT - 200);
-    scrollRef.current.scrollTop = scrollTo;
-  }, []);
-
   const activeStylistsSorted = useMemo(
     () =>
       [...stylists]
@@ -327,7 +315,7 @@ export default function WeeklyCalendarGrid({
       <div
         ref={scrollRef}
         data-calendar-scroll
-        className="overflow-y-auto overflow-x-auto flex-1 relative"
+        className="overflow-x-auto flex-1 relative"
       >
         <div
           className="grid relative"

@@ -207,10 +207,7 @@ export default function WeeklyCalendarView() {
         onViewModeChange={setViewMode}
       />
 
-      <div
-        className="relative"
-        style={{ height: "calc(100vh - 380px)", minHeight: 400 }}
-      >
+      <div className="relative">
         {bookings === undefined ? (
           <div className="flex items-center justify-center h-full">
             <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />

@@ -85,7 +85,7 @@ export default function BookingsPage() {
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            Booking Logs
+            History
           </button>
         </div>
 
