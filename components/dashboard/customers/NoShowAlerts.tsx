@@ -2,7 +2,7 @@
 
 import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { AlertTriangle, Shield, ShieldOff } from "lucide-react";
+import { AlertTriangle, Shield } from "lucide-react";
 import type { Doc } from "@/convex/_generated/dataModel";
 
 interface NoShowAlertsProps {
@@ -49,13 +49,13 @@ export default function NoShowAlerts({ customers }: NoShowAlertsProps) {
                   onClick={() => toggleBlacklist({ customerId: customer._id })}
                   className={`p-1.5 rounded-md transition-colors ${
                     customer.isBlacklisted
-                      ? "text-[#5a9a6e] hover:bg-[rgba(90,154,110,0.08)]"
-                      : "text-[#c45a5a] hover:bg-[rgba(196,90,90,0.08)]"
+                      ? "text-[#c45a5a] hover:bg-[rgba(196,90,90,0.08)]"
+                      : "text-[#9c9184] hover:bg-[rgba(156,145,132,0.08)]"
                   }`}
                   title={customer.isBlacklisted ? "Remove from blacklist" : "Blacklist customer"}
                 >
                   {customer.isBlacklisted ? (
-                    <ShieldOff className="w-4 h-4" />
+                    <Shield className="w-4 h-4 fill-current" />
                   ) : (
                     <Shield className="w-4 h-4" />
                   )}
