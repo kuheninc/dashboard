@@ -123,14 +123,10 @@ function layoutOverlapping(bookings: EnrichedBooking[]): LayoutBlock[] {
 // Droppable cell component
 function DropCell({
   id,
-  rowIdx,
 }: {
   id: string;
-  rowIdx: number;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id });
-  const isHourMark = rowIdx % 4 === 0;
-  const isHalfHourMark = rowIdx % 2 === 0;
 
   return (
     <div
@@ -139,11 +135,6 @@ function DropCell({
       style={{
         height: ROW_HEIGHT,
         backgroundColor: isOver ? "rgba(166,139,107,0.08)" : undefined,
-        borderBottom: isHourMark
-          ? "1px solid var(--color-border)"
-          : isHalfHourMark
-            ? "1px dashed rgba(166,139,107,0.12)"
-            : undefined,
       }}
     />
   );
@@ -404,7 +395,6 @@ export default function WeeklyCalendarGrid({
                         <DropCell
                           key={i}
                           id={`drop_${dateStr}_${timeStr}`}
-                          rowIdx={i}
                         />
                       );
                     })}
@@ -562,6 +552,33 @@ export default function WeeklyCalendarGrid({
                   );
                 });
               })}
+
+          {/* Hour and half-hour grid lines */}
+          {hours.flatMap((hour) => {
+            const y = (hour - START_HOUR) * HOUR_HEIGHT;
+            return [
+              <div
+                key={`hline-${hour}`}
+                className="absolute pointer-events-none"
+                style={{
+                  top: y,
+                  left: 60,
+                  right: 0,
+                  borderTop: "1px solid var(--color-border)",
+                }}
+              />,
+              <div
+                key={`hline-half-${hour}`}
+                className="absolute pointer-events-none"
+                style={{
+                  top: y + HOUR_HEIGHT / 2,
+                  left: 60,
+                  right: 0,
+                  borderTop: "1px dashed rgba(166,139,107,0.12)",
+                }}
+              />,
+            ];
+          })}
 
           {/* Current time indicator */}
           {currentTimeTop !== null && todayColStart !== null && (
