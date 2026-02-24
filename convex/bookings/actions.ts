@@ -26,22 +26,13 @@ export const requestFeedback = action({
     });
     if (!customer) throw new Error("Customer not found");
 
-    const conversation = await ctx.runQuery(
-      internal.conversations.internal.getBySalonPhone,
-      { salonId: booking.salonId, phone: customer.phone }
-    );
-    if (conversation) {
-      await ctx.runMutation(internal.conversations.internal.updateState, {
-        conversationId: conversation._id,
-        state: "awaiting_feedback",
-        flowData: { bookingId: args.bookingId },
-      });
-    }
+    // Placeholder Google Review link — replace with salon's actual link
+    const reviewLink = "https://g.page/r/CbGzk5R3jVIpEBM/review";
 
     await ctx.runAction(internal.whatsapp.send.sendTextMessage, {
       salonId: booking.salonId,
       recipientPhone: customer.phone,
-      text: `Hi ${customer.name}! Thank you for visiting us for your ${service?.name ?? "appointment"} on ${booking.date}. We'd love to hear your feedback!\n\nHow was your experience? Please rate from 1 (poor) to 5 (excellent) and share any comments.`,
+      text: `Hi ${customer.name}! Thank you for visiting us for your ${service?.name ?? "appointment"} on ${booking.date}. We hope you had a great experience! 😊\n\nWe'd really appreciate it if you could leave us a quick review:\n${reviewLink}\n\nThank you for your support! 🙏`,
     });
 
     return { success: true };

@@ -77,12 +77,10 @@ function ActionsDropdown({
   bookingId,
   status,
   feedbackRequestedAt,
-  feedbackRating,
 }: {
   bookingId: Id<"bookings">;
   status: BookingStatus;
   feedbackRequestedAt?: number;
-  feedbackRating?: number;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -123,17 +121,9 @@ function ActionsDropdown({
       color: "#c45a5a",
     });
   } else if (status === "completed") {
-    if (feedbackRating) {
+    if (feedbackRequestedAt) {
       actions.push({
-        label: `Rated ${feedbackRating}/5`,
-        icon: <Star className="w-3.5 h-3.5" />,
-        onClick: () => {},
-        color: "#c4983e",
-        disabled: true,
-      });
-    } else if (feedbackRequestedAt) {
-      actions.push({
-        label: "Review Pending",
+        label: "Review Sent",
         icon: <Star className="w-3.5 h-3.5" />,
         onClick: () => {},
         color: "#9c9184",
@@ -351,7 +341,6 @@ export default function BookingTable() {
                       bookingId={booking._id as Id<"bookings">}
                       status={booking.status as BookingStatus}
                       feedbackRequestedAt={booking.feedbackRequestedAt}
-                      feedbackRating={booking.feedbackRating}
                     />
                   </td>
                 </tr>

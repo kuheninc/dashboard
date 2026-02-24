@@ -383,22 +383,6 @@ export const requestFeedback = internalMutation({
   },
 });
 
-export const submitFeedback = internalMutation({
-  args: {
-    bookingId: v.id("bookings"),
-    rating: v.number(),
-    comment: v.optional(v.string()),
-  },
-  handler: async (ctx, args) => {
-    if (args.rating < 1 || args.rating > 5) throw new Error("Rating must be 1-5");
-    await ctx.db.patch(args.bookingId, {
-      feedbackRating: args.rating,
-      feedbackComment: args.comment,
-      feedbackSubmittedAt: Date.now(),
-    });
-  },
-});
-
 function addMinutesToTime(time: string, minutes: number): string {
   const [h, m] = time.split(":").map(Number);
   const totalMinutes = h * 60 + m + minutes;

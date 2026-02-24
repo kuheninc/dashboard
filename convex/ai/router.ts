@@ -430,42 +430,6 @@ async function executeTool(
       }
     }
 
-    case "submit_feedback": {
-      await ctx.runMutation(internal.bookings.internal.submitFeedback, {
-        bookingId: input.bookingId as Id<"bookings">,
-        rating: input.rating as number,
-        comment: (input.comment as string) || undefined,
-      });
-      // Reset conversation to idle
-      const fbConversation = await ctx.runQuery(
-        internal.conversations.internal.getBySalonPhone,
-        { salonId, phone: senderPhone }
-      );
-      if (fbConversation) {
-        await ctx.runMutation(internal.conversations.internal.resetToIdle, {
-          conversationId: fbConversation._id,
-        });
-      }
-      // Notify admin about the feedback
-      const fbSalon = await ctx.runQuery(internal.salons.internal.getById, { salonId });
-      const fbBooking = await ctx.runQuery(internal.bookings.internal.getById, {
-        bookingId: input.bookingId as Id<"bookings">,
-      });
-      if (fbSalon && fbBooking) {
-        const fbCustomer = await ctx.runQuery(internal.customers.internal.getById, {
-          customerId: fbBooking.customerId,
-        });
-        for (const adminPhone of fbSalon.adminPhones) {
-          await ctx.runAction(internal.whatsapp.send.sendTextMessage, {
-            salonId,
-            recipientPhone: adminPhone,
-            text: `⭐ New feedback from ${fbCustomer?.name ?? "customer"}: ${input.rating}/5${input.comment ? ` — "${input.comment}"` : ""}`,
-          });
-        }
-      }
-      return { success: true };
-    }
-
     // ─── ADMIN TOOLS ─────────────────────────────
     case "count_bookings":
     case "list_bookings": {

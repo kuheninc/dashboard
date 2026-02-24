@@ -107,9 +107,6 @@ export default defineSchema({
     preferredStylistId: v.optional(v.id("stylists")),
     preferredStylistName: v.optional(v.string()),
     feedbackRequestedAt: v.optional(v.number()),
-    feedbackRating: v.optional(v.number()),
-    feedbackComment: v.optional(v.string()),
-    feedbackSubmittedAt: v.optional(v.number()),
     googleEventId: v.optional(v.string()),
     reminderScheduledId: v.optional(v.id("_scheduled_functions")),
     checkinScheduledId: v.optional(v.id("_scheduled_functions")),
@@ -133,8 +130,7 @@ export default defineSchema({
       v.literal("cancel_flow"),
       v.literal("awaiting_reminder_response"),
       v.literal("awaiting_checkin_response"),
-      v.literal("admin_updating"),
-      v.literal("awaiting_feedback")
+      v.literal("admin_updating")
     ),
     flowData: v.optional(v.any()),
     lastMessageAt: v.number(),

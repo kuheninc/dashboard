@@ -50,8 +50,7 @@ export const updateState = internalMutation({
       v.literal("cancel_flow"),
       v.literal("awaiting_reminder_response"),
       v.literal("awaiting_checkin_response"),
-      v.literal("admin_updating"),
-      v.literal("awaiting_feedback")
+      v.literal("admin_updating")
     ),
     flowData: v.optional(v.any()),
   },

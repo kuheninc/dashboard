@@ -108,20 +108,6 @@ export const customerTools: Tool[] = [
       required: [],
     },
   },
-  {
-    name: "submit_feedback",
-    description:
-      "Submit customer feedback for a completed booking. Call this when the customer provides a rating (1-5) and optional comment during the feedback flow.",
-    input_schema: {
-      type: "object" as const,
-      properties: {
-        bookingId: { type: "string", description: "Booking ID from flow data" },
-        rating: { type: "number", description: "Rating from 1 (poor) to 5 (excellent)" },
-        comment: { type: "string", description: "Optional feedback text" },
-      },
-      required: ["bookingId", "rating"],
-    },
-  },
 ];
 
 export const adminTools: Tool[] = [
