@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
@@ -32,9 +32,36 @@ export default function BookingPopover({
   const markCompleted = useMutation(api.bookings.mutations.markCompleted);
   const markNoShow = useMutation(api.bookings.mutations.markNoShow);
 
+  // Track scroll offset so popover moves with the calendar
+  const [scrollOffset, setScrollOffset] = useState({ x: 0, y: 0 });
+  const initialScroll = useRef({ calX: 0, calY: 0, mainY: 0 });
+
+  const updateScrollOffset = useCallback(() => {
+    const calendarEl = document.querySelector("[data-calendar-scroll]");
+    const mainEl = document.querySelector("main");
+    const calX = calendarEl ? calendarEl.scrollLeft : 0;
+    const calY = calendarEl ? calendarEl.scrollTop : 0;
+    const mainY = mainEl ? mainEl.scrollTop : 0;
+    setScrollOffset({
+      x: initialScroll.current.calX - calX,
+      y: (initialScroll.current.calY - calY) + (initialScroll.current.mainY - mainY),
+    });
+  }, []);
+
+  // Capture initial scroll positions on mount
+  useEffect(() => {
+    const calendarEl = document.querySelector("[data-calendar-scroll]");
+    const mainEl = document.querySelector("main");
+    initialScroll.current = {
+      calX: calendarEl ? calendarEl.scrollLeft : 0,
+      calY: calendarEl ? calendarEl.scrollTop : 0,
+      mainY: mainEl ? mainEl.scrollTop : 0,
+    };
+  }, []);
+
   // Position: prefer below-right, adjust if near edges
-  const top = anchorRect.bottom + 8;
-  const left = Math.min(anchorRect.left, window.innerWidth - 320);
+  const top = anchorRect.bottom + 8 + scrollOffset.y;
+  const left = Math.min(anchorRect.left + scrollOffset.x, window.innerWidth - 320);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -45,19 +72,22 @@ export default function BookingPopover({
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
     };
-    const handleScroll = () => onClose();
 
     document.addEventListener("mousedown", handleClickOutside);
     document.addEventListener("keydown", handleEsc);
-    // Close on scroll of the calendar container
-    document.querySelector("[data-calendar-scroll]")?.addEventListener("scroll", handleScroll);
+    // Update position on scroll of both the calendar and page containers
+    const calendarEl = document.querySelector("[data-calendar-scroll]");
+    const mainEl = document.querySelector("main");
+    calendarEl?.addEventListener("scroll", updateScrollOffset);
+    mainEl?.addEventListener("scroll", updateScrollOffset);
 
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
       document.removeEventListener("keydown", handleEsc);
-      document.querySelector("[data-calendar-scroll]")?.removeEventListener("scroll", handleScroll);
+      calendarEl?.removeEventListener("scroll", updateScrollOffset);
+      mainEl?.removeEventListener("scroll", updateScrollOffset);
     };
-  }, [onClose]);
+  }, [onClose, updateScrollOffset]);
 
   const dateFormatted = format(
     new Date(booking.date + "T00:00:00"),
