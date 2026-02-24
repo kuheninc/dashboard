@@ -23,7 +23,7 @@ export default defineSchema({
     admins: v.optional(
       v.array(
         v.object({
-          email: v.string(),
+          email: v.optional(v.string()),
           username: v.string(),
           passwordHash: v.string(),
           phone: v.string(),

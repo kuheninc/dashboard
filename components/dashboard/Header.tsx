@@ -1,8 +1,9 @@
 "use client";
 
-import { Bell, Search, Menu } from "lucide-react";
+import { Bell, Search, Menu, LogOut } from "lucide-react";
+import { useAuthActions } from "@convex-dev/auth/react";
 import { useDashboard } from "@/lib/dashboard-context";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -27,8 +28,15 @@ const pageTitles: Record<string, string> = {
 
 export default function Header({ onMenuClick }: HeaderProps) {
   const { salon } = useDashboard();
+  const { signOut } = useAuthActions();
   const pathname = usePathname();
+  const router = useRouter();
   const title = pageTitles[pathname] ?? "Dashboard";
+
+  const handleSignOut = async () => {
+    await signOut();
+    router.push("/sign-in");
+  };
 
   return (
     <header className="flex items-center justify-between px-4 sm:px-6 lg:px-10 py-4 lg:py-5 flex-wrap gap-3">
@@ -67,6 +75,14 @@ export default function Header({ onMenuClick }: HeaderProps) {
         <button className="flex items-center gap-1.5 px-3 sm:px-4 py-2 bg-primary text-primary-foreground rounded-lg text-[12px] font-medium hover:bg-[#8a7055] transition-colors">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
           <span className="hidden sm:inline">New Booking</span>
+        </button>
+
+        <button
+          onClick={handleSignOut}
+          className="w-[34px] h-[34px] flex items-center justify-center bg-card border border-border rounded-lg hover:border-[rgba(196,90,90,0.3)] hover:bg-[rgba(196,90,90,0.04)] transition-all"
+          title="Sign out"
+        >
+          <LogOut className="w-4 h-4 text-muted-foreground" />
         </button>
       </div>
     </header>

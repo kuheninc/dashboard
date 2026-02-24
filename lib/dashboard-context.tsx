@@ -1,7 +1,7 @@
 "use client";
 
-import { createContext, useContext, useState, type ReactNode } from "react";
-import { useQuery } from "convex/react";
+import { createContext, useContext, useState, useEffect, useRef, type ReactNode } from "react";
+import { useQuery, useMutation } from "convex/react";
 import { api } from "../convex/_generated/api";
 import type { Id, Doc } from "../convex/_generated/dataModel";
 import { useRouter } from "next/navigation";
@@ -42,11 +42,15 @@ function CadenceSpinner() {
   );
 }
 
+interface SalonWithRole extends Doc<"salons"> {
+  memberRole: "owner" | "admin";
+}
+
 function SalonPicker({
   salons,
   onSelect,
 }: {
-  salons: NonNullable<ReturnType<typeof useMySalons>>;
+  salons: SalonWithRole[];
   onSelect: (id: Id<"salons">) => void;
 }) {
   return (
@@ -117,8 +121,35 @@ function NoSalonState() {
   );
 }
 
+function AutoLinker() {
+  const autoLink = useMutation(api.salonMembers.autoLink.autoLinkUserToSalon);
+  const [tried, setTried] = useState(false);
+  const [linked, setLinked] = useState(false);
+  const attemptedRef = useRef(false);
+
+  useEffect(() => {
+    if (attemptedRef.current) return;
+    attemptedRef.current = true;
+    autoLink({}).then((result) => {
+      setLinked(result.linked);
+      setTried(true);
+    }).catch(() => {
+      setTried(true);
+    });
+  }, [autoLink]);
+
+  if (!tried) return <CadenceSpinner />;
+  if (linked) {
+    // Force re-render by reloading — the query will now find the salon
+    window.location.reload();
+    return <CadenceSpinner />;
+  }
+  return <NoSalonState />;
+}
+
 export function DashboardProvider({ children }: { children: ReactNode }) {
-  const mySalons = useMySalons();
+  const rawSalons = useMySalons();
+  const mySalons = rawSalons as SalonWithRole[] | undefined;
   const [selectedSalonId, setSelectedSalonId] = useState<Id<"salons"> | null>(null);
 
   // Determine which salon to load
@@ -142,9 +173,9 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     return <CadenceSpinner />;
   }
 
-  // No salons linked to this user
+  // No salons linked to this user — try auto-linking first
   if (mySalons.length === 0) {
-    return <NoSalonState />;
+    return <AutoLinker />;
   }
 
   // Multi-salon: show picker if no selection yet and more than 1

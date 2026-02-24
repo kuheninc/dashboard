@@ -29,6 +29,8 @@ import type * as http from "../http.js";
 import type * as messages_internal from "../messages/internal.js";
 import type * as messages_mutations from "../messages/mutations.js";
 import type * as messages_queries from "../messages/queries.js";
+import type * as migrations_backfillAdminEmail from "../migrations/backfillAdminEmail.js";
+import type * as salonMembers_autoLink from "../salonMembers/autoLink.js";
 import type * as salonMembers_mutations from "../salonMembers/mutations.js";
 import type * as salonMembers_queries from "../salonMembers/queries.js";
 import type * as salons_internal from "../salons/internal.js";
@@ -77,6 +79,8 @@ declare const fullApi: ApiFromModules<{
   "messages/internal": typeof messages_internal;
   "messages/mutations": typeof messages_mutations;
   "messages/queries": typeof messages_queries;
+  "migrations/backfillAdminEmail": typeof migrations_backfillAdminEmail;
+  "salonMembers/autoLink": typeof salonMembers_autoLink;
   "salonMembers/mutations": typeof salonMembers_mutations;
   "salonMembers/queries": typeof salonMembers_queries;
   "salons/internal": typeof salons_internal;

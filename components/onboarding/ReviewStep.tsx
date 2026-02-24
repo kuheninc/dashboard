@@ -41,6 +41,9 @@ export default function ReviewStep({ data }: Props) {
               >
                 <div>
                   <span className="font-medium text-foreground">{a.username}</span>
+                  <span className="text-muted-foreground ml-2 text-[12px]">
+                    {a.email}
+                  </span>
                   <span className="text-muted-foreground ml-2 font-mono text-[12px]">
                     {a.phone}
                   </span>
