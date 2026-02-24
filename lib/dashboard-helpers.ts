@@ -3,6 +3,7 @@ import type { Doc } from "../convex/_generated/dataModel";
 // Enriched booking with resolved names
 export interface EnrichedBooking {
   _id: string;
+  salonId: string;
   customerId: string;
   stylistId: string;
   serviceId: string;
@@ -15,8 +16,16 @@ export interface EnrichedBooking {
   serviceName: string;
   stylistName: string;
   servicePrice: number;
+  serviceDurationMinutes: number;
   preferredStylistName?: string;
   feedbackRequestedAt?: number;
+  previousDate?: string;
+  previousStartTime?: string;
+  previousEndTime?: string;
+  previousStylistId?: string;
+  rescheduleReason?: string;
+  rescheduleRequestedAt?: number;
+  customerPreferredTimes?: string;
 }
 
 export function enrichBookings(
@@ -29,23 +38,35 @@ export function enrichBookings(
   const serviceMap = new Map(services.map((s) => [s._id, s]));
   const stylistMap = new Map(stylists.map((s) => [s._id, s]));
 
-  return bookings.map((b) => ({
-    _id: b._id,
-    customerId: b.customerId,
-    stylistId: b.stylistId,
-    serviceId: b.serviceId,
-    date: b.date,
-    startTime: b.startTime,
-    endTime: b.endTime,
-    status: b.status,
-    createdBy: b.createdBy,
-    customerName: customerMap.get(b.customerId)?.name ?? "Unknown",
-    serviceName: serviceMap.get(b.serviceId)?.name ?? "Unknown",
-    stylistName: stylistMap.get(b.stylistId)?.name ?? "Unknown",
-    servicePrice: serviceMap.get(b.serviceId)?.priceRM ?? 0,
-    preferredStylistName: (b as Record<string, unknown>).preferredStylistName as string | undefined,
-    feedbackRequestedAt: (b as Record<string, unknown>).feedbackRequestedAt as number | undefined,
-  }));
+  return bookings.map((b) => {
+    const raw = b as Record<string, unknown>;
+    return {
+      _id: b._id,
+      salonId: b.salonId,
+      customerId: b.customerId,
+      stylistId: b.stylistId,
+      serviceId: b.serviceId,
+      date: b.date,
+      startTime: b.startTime,
+      endTime: b.endTime,
+      status: b.status,
+      createdBy: b.createdBy,
+      customerName: customerMap.get(b.customerId)?.name ?? "Unknown",
+      serviceName: serviceMap.get(b.serviceId)?.name ?? "Unknown",
+      stylistName: stylistMap.get(b.stylistId)?.name ?? "Unknown",
+      servicePrice: serviceMap.get(b.serviceId)?.priceRM ?? 0,
+      serviceDurationMinutes: serviceMap.get(b.serviceId)?.durationMinutes ?? 30,
+      preferredStylistName: raw.preferredStylistName as string | undefined,
+      feedbackRequestedAt: raw.feedbackRequestedAt as number | undefined,
+      previousDate: raw.previousDate as string | undefined,
+      previousStartTime: raw.previousStartTime as string | undefined,
+      previousEndTime: raw.previousEndTime as string | undefined,
+      previousStylistId: raw.previousStylistId as string | undefined,
+      rescheduleReason: raw.rescheduleReason as string | undefined,
+      rescheduleRequestedAt: raw.rescheduleRequestedAt as number | undefined,
+      customerPreferredTimes: raw.customerPreferredTimes as string | undefined,
+    };
+  });
 }
 
 export function formatDate(dateStr: string): string {

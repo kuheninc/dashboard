@@ -335,6 +335,76 @@ export const notifyCustomer = internalAction({
   },
 });
 
+export const notifyReschedule = internalAction({
+  args: {
+    bookingId: v.id("bookings"),
+    salonId: v.id("salons"),
+  },
+  handler: async (ctx, args) => {
+    const booking = await ctx.runQuery(internal.bookings.internal.getById, {
+      bookingId: args.bookingId,
+    });
+    if (!booking) return;
+
+    const customer = await ctx.runQuery(internal.customers.internal.getById, {
+      customerId: booking.customerId,
+    });
+    if (!customer) return;
+
+    const service = await ctx.runQuery(internal.services.internal.getById, {
+      serviceId: booking.serviceId,
+    });
+    const serviceName = service?.name ?? "appointment";
+
+    const stylists = await ctx.runQuery(
+      internal.stylists.internal.listBySalon,
+      { salonId: args.salonId }
+    );
+    const stylist = stylists.find((s) => s._id === booking.stylistId);
+    const stylistName = stylist?.name ?? "";
+
+    const bodyText =
+      `Your ${serviceName} has been rescheduled.\n\n` +
+      `New: ${booking.date} at ${booking.startTime}` +
+      (stylistName ? ` with ${stylistName}` : "") +
+      `\n` +
+      `Previous: ${booking.previousDate} at ${booking.previousStartTime}\n\n` +
+      (booking.rescheduleReason
+        ? `Reason: ${booking.rescheduleReason}\n\n`
+        : "") +
+      `Does this new time work for you?`;
+
+    await ctx.runAction(
+      internal.whatsapp.send.sendInteractiveButtonMessage,
+      {
+        salonId: args.salonId,
+        recipientPhone: customer.phone,
+        bodyText,
+        buttons: [
+          { id: `reschedule_confirm_${args.bookingId}`, title: "Confirm" },
+          {
+            id: `reschedule_decline_${args.bookingId}`,
+            title: "Suggest Other Time",
+          },
+        ],
+      }
+    );
+
+    // Set conversation state to await customer's button response
+    const conversation = await ctx.runQuery(
+      internal.conversations.internal.getBySalonPhone,
+      { salonId: args.salonId, phone: customer.phone }
+    );
+    if (conversation) {
+      await ctx.runMutation(internal.conversations.internal.updateState, {
+        conversationId: conversation._id,
+        state: "awaiting_reschedule_response",
+        flowData: { bookingId: args.bookingId },
+      });
+    }
+  },
+});
+
 // Keep backward-compatible alias for existing scheduled jobs
 export const notifyApproval = internalAction({
   args: {

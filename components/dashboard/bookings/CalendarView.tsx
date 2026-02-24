@@ -30,6 +30,7 @@ const statusDotColor: Record<string, string> = {
   no_show: "bg-[#c45a5a]",
   cancelled_customer: "bg-[#9c9184]",
   cancelled_admin: "bg-[#9c9184]",
+  reschedule_pending: "bg-[#508cb4]",
 };
 
 function getMonthRange(month: Date): { startDate: string; endDate: string } {

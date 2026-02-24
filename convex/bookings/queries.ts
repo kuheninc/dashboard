@@ -65,3 +65,49 @@ export const getPendingApproval = query({
       .collect();
   },
 });
+
+export const checkConflicts = query({
+  args: {
+    salonId: v.id("salons"),
+    stylistId: v.id("stylists"),
+    date: v.string(),
+    startTime: v.string(),
+    endTime: v.string(),
+    excludeBookingId: v.optional(v.id("bookings")),
+  },
+  handler: async (ctx, args) => {
+    const bookings = await ctx.db
+      .query("bookings")
+      .withIndex("by_salon_stylist_date", (q) =>
+        q
+          .eq("salonId", args.salonId)
+          .eq("stylistId", args.stylistId)
+          .eq("date", args.date)
+      )
+      .collect();
+
+    const activeStatuses = [
+      "pending_approval",
+      "confirmed",
+      "reminder_sent",
+      "customer_confirmed",
+      "reschedule_pending",
+    ];
+
+    const toMin = (t: string) => {
+      const [h, m] = t.split(":").map(Number);
+      return h * 60 + m;
+    };
+
+    return bookings.filter((b) => {
+      if (args.excludeBookingId && b._id === args.excludeBookingId)
+        return false;
+      if (!activeStatuses.includes(b.status)) return false;
+      const bStart = toMin(b.startTime);
+      const bEnd = toMin(b.endTime);
+      const newStart = toMin(args.startTime);
+      const newEnd = toMin(args.endTime);
+      return newStart < bEnd && newEnd > bStart;
+    });
+  },
+});

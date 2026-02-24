@@ -8,6 +8,7 @@ import { getTodayDateStr, getDateRangeStr } from "@/lib/dashboard-helpers";
 import PendingApprovals from "@/components/dashboard/bookings/PendingApprovals";
 import BookingTable from "@/components/dashboard/bookings/BookingTable";
 import CalendarView from "@/components/dashboard/bookings/CalendarView";
+import WeeklyCalendarView from "@/components/dashboard/bookings/WeeklyCalendarView";
 import BookingLogs from "@/components/dashboard/bookings/BookingLogs";
 import StatCard from "@/components/dashboard/StatCard";
 import { CalendarDays, Clock, CheckCircle2, XCircle } from "lucide-react";
@@ -88,7 +89,7 @@ export default function BookingsPage() {
           </button>
         </div>
 
-        {tab === "calendar" && <CalendarView />}
+        {tab === "calendar" && <WeeklyCalendarView />}
         {tab === "list" && <BookingTable />}
         {tab === "logs" && <BookingLogs />}
       </div>

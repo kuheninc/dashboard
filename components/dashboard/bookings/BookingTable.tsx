@@ -18,11 +18,12 @@ type BookingStatus =
   | "no_show"
   | "cancelled_customer"
   | "cancelled_admin"
-  | "rejected";
+  | "rejected"
+  | "reschedule_pending";
 
 const TERMINAL_STATUSES: BookingStatus[] = ["completed", "no_show", "cancelled_customer", "cancelled_admin", "rejected"];
 
-const UPCOMING_STATUSES: BookingStatus[] = ["pending_approval", "confirmed", "reminder_sent", "customer_confirmed"];
+const UPCOMING_STATUSES: BookingStatus[] = ["pending_approval", "confirmed", "reminder_sent", "customer_confirmed", "reschedule_pending"];
 
 const statusOptions: { label: string; value: BookingStatus | "all" }[] = [
   { label: "All", value: "all" },

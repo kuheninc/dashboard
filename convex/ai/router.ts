@@ -1,7 +1,7 @@
 "use node";
 
 import { internalAction } from "../_generated/server";
-import { internal } from "../_generated/api";
+import { api, internal } from "../_generated/api";
 import { v } from "convex/values";
 import Anthropic from "@anthropic-ai/sdk";
 import { buildCustomerSystemPrompt, buildAdminSystemPrompt } from "./prompts";
@@ -49,6 +49,44 @@ export const handleMessage = internalAction({
       role: "user",
       content: args.messageBody,
     });
+
+    // Handle customer replying with preferred times after declining reschedule
+    if (
+      conversation?.state === "awaiting_reschedule_response" &&
+      conversation?.flowData?.awaitingPreferredTimes
+    ) {
+      const bookingId = conversation.flowData
+        .bookingId as Id<"bookings">;
+
+      // Save preferred times and revert booking
+      await ctx.runMutation(api.bookings.mutations.declineReschedule, {
+        bookingId,
+        customerPreferredTimes: args.messageBody,
+      });
+
+      // Acknowledge to customer
+      await ctx.runAction(internal.whatsapp.send.sendTextMessage, {
+        salonId: salon._id,
+        recipientPhone: args.senderPhone,
+        text: "Thank you! We've noted your preferred times and will get back to you shortly with a new time. Your original appointment has been restored.",
+      });
+
+      // Store bot reply
+      await ctx.runMutation(internal.messages.internal.store, {
+        salonId: salon._id,
+        conversationId,
+        role: "assistant",
+        content:
+          "Thank you! We've noted your preferred times and will get back to you shortly with a new time. Your original appointment has been restored.",
+      });
+
+      // Reset conversation state
+      await ctx.runMutation(internal.conversations.internal.resetToIdle, {
+        conversationId: conversation._id,
+      });
+
+      return;
+    }
 
     try {
     // 5. Load context
@@ -812,6 +850,80 @@ async function checkAvailability(
     slots: slots.slice(0, 10),
   };
 }
+
+export const handleInteractiveResponse = internalAction({
+  args: {
+    waPhoneNumberId: v.string(),
+    senderPhone: v.string(),
+    buttonId: v.string(),
+    buttonTitle: v.string(),
+  },
+  handler: async (ctx, args) => {
+    // Look up salon
+    const salon = await ctx.runQuery(
+      internal.salons.internal.getByWaPhoneNumberId,
+      { waPhoneNumberId: args.waPhoneNumberId }
+    );
+    if (!salon) return;
+
+    // Handle reschedule confirm/decline buttons
+    if (args.buttonId.startsWith("reschedule_confirm_")) {
+      const bookingId = args.buttonId.replace(
+        "reschedule_confirm_",
+        ""
+      ) as Id<"bookings">;
+
+      await ctx.runMutation(api.bookings.mutations.confirmReschedule, {
+        bookingId,
+      });
+
+      // Send confirmation message
+      await ctx.runAction(internal.whatsapp.send.sendTextMessage, {
+        salonId: salon._id,
+        recipientPhone: args.senderPhone,
+        text: "Great! Your rescheduled appointment has been confirmed. See you then! ✅",
+      });
+
+      // Reset conversation state
+      const conversation = await ctx.runQuery(
+        internal.conversations.internal.getBySalonPhone,
+        { salonId: salon._id, phone: args.senderPhone }
+      );
+      if (conversation) {
+        await ctx.runMutation(internal.conversations.internal.resetToIdle, {
+          conversationId: conversation._id,
+        });
+      }
+    } else if (args.buttonId.startsWith("reschedule_decline_")) {
+      const bookingId = args.buttonId.replace(
+        "reschedule_decline_",
+        ""
+      ) as Id<"bookings">;
+
+      // Ask the customer for their preferred times
+      await ctx.runAction(internal.whatsapp.send.sendTextMessage, {
+        salonId: salon._id,
+        recipientPhone: args.senderPhone,
+        text: "No problem! Could you let us know what times work better for you? We'll do our best to accommodate.",
+      });
+
+      // Keep conversation in awaiting_reschedule_response state
+      // The next text message from the customer will be captured by the AI router
+      // which will save their preferred times and notify admin
+      const conversation = await ctx.runQuery(
+        internal.conversations.internal.getBySalonPhone,
+        { salonId: salon._id, phone: args.senderPhone }
+      );
+      if (conversation) {
+        await ctx.runMutation(internal.conversations.internal.updateState, {
+          conversationId: conversation._id,
+          state: "awaiting_reschedule_response",
+          flowData: { bookingId, awaitingPreferredTimes: true },
+        });
+      }
+    }
+  },
+});
 
 function timeToMinutes(time: string): number {
   const [h, m] = time.split(":").map(Number);

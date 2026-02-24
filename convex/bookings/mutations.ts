@@ -223,6 +223,127 @@ export const reject = mutation({
   },
 });
 
+export const reschedule = mutation({
+  args: {
+    bookingId: v.id("bookings"),
+    newDate: v.string(),
+    newStartTime: v.string(),
+    newEndTime: v.string(),
+    newStylistId: v.optional(v.id("stylists")),
+    reason: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const booking = await ctx.db.get(args.bookingId);
+    if (!booking) throw new Error("Booking not found");
+
+    const allowedStatuses = [
+      "pending_approval",
+      "confirmed",
+      "reminder_sent",
+      "customer_confirmed",
+    ];
+    if (!allowedStatuses.includes(booking.status)) {
+      throw new Error("Cannot reschedule a booking with status: " + booking.status);
+    }
+
+    // Cancel existing scheduled jobs
+    if (booking.reminderScheduledId) {
+      await ctx.scheduler.cancel(booking.reminderScheduledId);
+    }
+    if (booking.checkinScheduledId) {
+      await ctx.scheduler.cancel(booking.checkinScheduledId);
+    }
+
+    const wasPending = booking.status === "pending_approval";
+    const newStatus = wasPending ? "pending_approval" : "reschedule_pending";
+
+    await ctx.db.patch(args.bookingId, {
+      date: args.newDate,
+      startTime: args.newStartTime,
+      endTime: args.newEndTime,
+      stylistId: args.newStylistId ?? booking.stylistId,
+      status: newStatus as typeof booking.status,
+      previousDate: booking.date,
+      previousStartTime: booking.startTime,
+      previousEndTime: booking.endTime,
+      previousStylistId: booking.stylistId,
+      rescheduleReason: args.reason,
+      rescheduleRequestedAt: Date.now(),
+      reminderScheduledId: undefined,
+      checkinScheduledId: undefined,
+    });
+
+    // Send interactive button notification for confirmed bookings
+    if (!wasPending) {
+      await ctx.scheduler.runAfter(
+        0,
+        internal.bookings.internal.notifyReschedule,
+        {
+          bookingId: args.bookingId,
+          salonId: booking.salonId,
+        }
+      );
+    }
+
+    // Clean up old GCal event
+    await ctx.scheduler.runAfter(0, internal.calendar.sync.deleteEvent, {
+      salonId: booking.salonId,
+      bookingId: args.bookingId,
+    });
+  },
+});
+
+export const confirmReschedule = mutation({
+  args: { bookingId: v.id("bookings") },
+  handler: async (ctx, args) => {
+    const booking = await ctx.db.get(args.bookingId);
+    if (!booking) throw new Error("Booking not found");
+    if (booking.status !== "reschedule_pending") {
+      throw new Error("Booking is not in reschedule_pending status");
+    }
+
+    await ctx.db.patch(args.bookingId, {
+      status: "confirmed",
+    });
+
+    // Sync new time to GCal
+    await ctx.scheduler.runAfter(0, internal.calendar.sync.createEvent, {
+      salonId: booking.salonId,
+      bookingId: args.bookingId,
+    });
+  },
+});
+
+export const declineReschedule = mutation({
+  args: {
+    bookingId: v.id("bookings"),
+    customerPreferredTimes: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const booking = await ctx.db.get(args.bookingId);
+    if (!booking) throw new Error("Booking not found");
+    if (booking.status !== "reschedule_pending") {
+      throw new Error("Booking is not in reschedule_pending status");
+    }
+
+    // Revert to previous time/date/stylist
+    await ctx.db.patch(args.bookingId, {
+      date: booking.previousDate!,
+      startTime: booking.previousStartTime!,
+      endTime: booking.previousEndTime!,
+      stylistId: booking.previousStylistId!,
+      status: "confirmed",
+      customerPreferredTimes: args.customerPreferredTimes,
+    });
+
+    // Re-sync original time to GCal
+    await ctx.scheduler.runAfter(0, internal.calendar.sync.createEvent, {
+      salonId: booking.salonId,
+      bookingId: args.bookingId,
+    });
+  },
+});
+
 // Helper: add minutes to a "HH:MM" time string
 function addMinutesToTime(time: string, minutes: number): string {
   const [h, m] = time.split(":").map(Number);

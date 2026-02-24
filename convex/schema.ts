@@ -111,7 +111,8 @@ export default defineSchema({
       v.literal("no_show"),
       v.literal("cancelled_customer"),
       v.literal("cancelled_admin"),
-      v.literal("rejected")
+      v.literal("rejected"),
+      v.literal("reschedule_pending")
     ),
     customerConfirmedAt: v.optional(v.number()),
     approvedBy: v.optional(v.string()),
@@ -124,6 +125,14 @@ export default defineSchema({
     reminderScheduledId: v.optional(v.id("_scheduled_functions")),
     checkinScheduledId: v.optional(v.id("_scheduled_functions")),
     createdBy: v.union(v.literal("customer"), v.literal("admin")),
+    // Reschedule tracking
+    previousDate: v.optional(v.string()),
+    previousStartTime: v.optional(v.string()),
+    previousEndTime: v.optional(v.string()),
+    previousStylistId: v.optional(v.id("stylists")),
+    rescheduleReason: v.optional(v.string()),
+    rescheduleRequestedAt: v.optional(v.number()),
+    customerPreferredTimes: v.optional(v.string()),
   })
     .index("by_salon_date", ["salonId", "date"])
     .index("by_salon_status", ["salonId", "status"])
@@ -143,7 +152,8 @@ export default defineSchema({
       v.literal("cancel_flow"),
       v.literal("awaiting_reminder_response"),
       v.literal("awaiting_checkin_response"),
-      v.literal("admin_updating")
+      v.literal("admin_updating"),
+      v.literal("awaiting_reschedule_response")
     ),
     flowData: v.optional(v.any()),
     lastMessageAt: v.number(),

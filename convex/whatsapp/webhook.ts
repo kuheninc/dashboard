@@ -38,16 +38,38 @@ export const webhookIncoming = httpAction(async (ctx, request) => {
     return new Response(null, { status: 200 });
   }
 
-  // Only handle text messages for MVP
+  const waPhoneNumberId = value.metadata?.phone_number_id;
+  const senderPhone = message.from; // E.164 without +
+
+  if (!waPhoneNumberId || !senderPhone) {
+    return new Response(null, { status: 200 });
+  }
+
+  // Handle interactive button responses (e.g. reschedule confirm/decline)
+  if (message.type === "interactive") {
+    const buttonReply = message.interactive?.button_reply;
+    if (buttonReply) {
+      await ctx.scheduler.runAfter(
+        0,
+        internal.ai.router.handleInteractiveResponse,
+        {
+          waPhoneNumberId,
+          senderPhone,
+          buttonId: buttonReply.id,
+          buttonTitle: buttonReply.title,
+        }
+      );
+    }
+    return new Response(null, { status: 200 });
+  }
+
+  // Only handle text messages otherwise
   if (message.type !== "text") {
     return new Response(null, { status: 200 });
   }
 
-  const waPhoneNumberId = value.metadata?.phone_number_id;
-  const senderPhone = message.from; // E.164 without +
   const messageBody = message.text?.body;
-
-  if (!waPhoneNumberId || !senderPhone || !messageBody) {
+  if (!messageBody) {
     return new Response(null, { status: 200 });
   }
 
