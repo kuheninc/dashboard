@@ -13,7 +13,7 @@ export default function NoShowAlerts({ customers }: NoShowAlertsProps) {
   const toggleBlacklist = useMutation(api.customers.mutations.toggleBlacklist);
 
   const offenders = customers
-    .filter((c) => c.noShowCount >= 2)
+    .filter((c) => c.noShowCount >= 3)
     .sort((a, b) => b.noShowCount - a.noShowCount);
 
   return (
