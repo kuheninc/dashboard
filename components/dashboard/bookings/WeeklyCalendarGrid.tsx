@@ -240,23 +240,60 @@ export default function WeeklyCalendarGrid({
   return (
     <div className="flex flex-col h-full">
       {/* Day headers */}
-      <div
-        className="grid border-b border-border shrink-0"
-        style={{ gridTemplateColumns }}
-      >
-        {/* Empty corner */}
-        <div className="border-r border-border" />
+      {viewMode === "unified" ? (
+        <div
+          className="grid border-b border-border shrink-0"
+          style={{ gridTemplateColumns }}
+        >
+          {/* Empty corner */}
+          <div className="border-r border-border" />
 
-        {viewMode === "unified"
-          ? days.map((day) => {
+          {days.map((day) => {
+            const dateStr = format(day, "yyyy-MM-dd");
+            const today = isToday(day);
+            return (
+              <div
+                key={dateStr}
+                className={`text-center py-2 border-r border-border last:border-r-0 ${
+                  today ? "bg-primary" : ""
+                }`}
+              >
+                <p
+                  className={`text-[10px] font-label uppercase ${
+                    today ? "text-white/70" : "text-muted-foreground"
+                  }`}
+                >
+                  {format(day, "EEE")}
+                </p>
+                <p
+                  className={`text-[15px] font-data font-medium ${
+                    today ? "text-white" : "text-foreground"
+                  }`}
+                >
+                  {format(day, "d")}
+                </p>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <>
+          {/* Date row */}
+          <div
+            className="grid border-b border-border shrink-0"
+            style={{ gridTemplateColumns }}
+          >
+            <div className="border-r border-border" />
+            {days.map((day) => {
               const dateStr = format(day, "yyyy-MM-dd");
               const today = isToday(day);
               return (
                 <div
                   key={dateStr}
-                  className={`text-center py-2 border-r border-border last:border-r-0 ${
+                  className={`text-center py-1.5 border-r border-border last:border-r-0 ${
                     today ? "bg-primary" : ""
                   }`}
+                  style={{ gridColumn: `span ${activeStylistsSorted.length}` }}
                 >
                   <p
                     className={`text-[10px] font-label uppercase ${
@@ -274,26 +311,24 @@ export default function WeeklyCalendarGrid({
                   </p>
                 </div>
               );
-            })
-          : days.map((day) => {
+            })}
+          </div>
+          {/* Stylist row */}
+          <div
+            className="grid border-b border-border shrink-0"
+            style={{ gridTemplateColumns }}
+          >
+            <div className="border-r border-border" />
+            {days.flatMap((day) => {
               const dateStr = format(day, "yyyy-MM-dd");
               const today = isToday(day);
-              return activeStylistsSorted.map((stylist, sIdx) => (
+              return activeStylistsSorted.map((stylist) => (
                 <div
                   key={`${dateStr}-${stylist._id}`}
                   className={`text-center py-1.5 border-r border-border last:border-r-0 ${
                     today ? "bg-primary" : ""
                   }`}
                 >
-                  {sIdx === 0 && (
-                    <p
-                      className={`text-[9px] font-label uppercase ${
-                        today ? "text-white/70" : "text-muted-foreground"
-                      }`}
-                    >
-                      {format(day, "EEE d")}
-                    </p>
-                  )}
                   <p
                     className={`text-[10px] font-medium truncate px-1 ${
                       today ? "text-white/90" : ""
@@ -309,7 +344,9 @@ export default function WeeklyCalendarGrid({
                 </div>
               ));
             })}
-      </div>
+          </div>
+        </>
+      )}
 
       {/* Scrollable grid body */}
       <div
