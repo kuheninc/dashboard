@@ -1,5 +1,6 @@
 import { mutation } from "../_generated/server";
 import { v } from "convex/values";
+import { titleCaseName } from "../lib/utils";
 
 export const create = mutation({
   args: {
@@ -11,6 +12,7 @@ export const create = mutation({
   handler: async (ctx, args) => {
     return await ctx.db.insert("customers", {
       ...args,
+      name: titleCaseName(args.name),
       noShowCount: 0,
       totalBookings: 0,
       isBlacklisted: false,
@@ -29,7 +31,7 @@ export const update = mutation({
     const { customerId, ...fields } = args;
     const updates: Record<string, unknown> = {};
     for (const [key, val] of Object.entries(fields)) {
-      if (val !== undefined) updates[key] = val;
+      if (val !== undefined) updates[key] = key === "name" ? titleCaseName(val as string) : val;
     }
     if (Object.keys(updates).length > 0) {
       await ctx.db.patch(customerId, updates);

@@ -315,7 +315,7 @@ export default function WeeklyCalendarGrid({
       <div
         ref={scrollRef}
         data-calendar-scroll
-        className="overflow-x-auto flex-1 relative"
+        className="overflow-x-auto flex-1 relative pt-2"
       >
         <div
           className="grid relative"

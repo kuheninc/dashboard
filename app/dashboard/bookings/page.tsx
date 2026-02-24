@@ -65,7 +65,7 @@ export default function BookingsPage() {
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            Calendar View
+            Calendar
           </button>
           <button
             onClick={() => setTab("list")}

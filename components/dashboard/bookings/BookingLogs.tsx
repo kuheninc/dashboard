@@ -72,13 +72,17 @@ function getDayLabel(dateStr: string): string {
 function MiniCalendar({
   year,
   month,
+  selectedDate,
   onPrev,
   onNext,
+  onSelectDate,
 }: {
   year: number;
   month: number;
+  selectedDate: string | null;
   onPrev: () => void;
   onNext: () => void;
+  onSelectDate: (date: string) => void;
 }) {
   const now = new Date();
   const currentYear = now.getFullYear();
@@ -131,17 +135,25 @@ function MiniCalendar({
           }
           const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
           const isToday = dateStr === todayStr;
+          const isSelected = dateStr === selectedDate;
+          const isFuture = dateStr >= todayStr;
           return (
-            <div
+            <button
               key={day}
-              className={`w-7 h-7 flex items-center justify-center text-[11px] rounded-md ${
-                isToday
+              disabled={isFuture}
+              onClick={() => onSelectDate(dateStr)}
+              className={`w-7 h-7 flex items-center justify-center text-[11px] rounded-md transition-colors ${
+                isSelected
                   ? "bg-primary text-primary-foreground font-semibold"
-                  : "text-muted-foreground"
+                  : isToday
+                    ? "ring-1 ring-primary/40 text-primary font-semibold hover:bg-[rgba(166,139,107,0.08)]"
+                    : isFuture
+                      ? "text-muted-foreground/30 cursor-not-allowed"
+                      : "text-muted-foreground hover:bg-[rgba(166,139,107,0.08)]"
               }`}
             >
               {day}
-            </div>
+            </button>
           );
         })}
       </div>
@@ -153,15 +165,15 @@ export default function BookingLogs() {
   const { salonId, customers, services, stylists } = useDashboard();
 
   const now = new Date();
-  const [year, setYear] = useState(now.getFullYear());
-  const [month, setMonth] = useState(now.getMonth());
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<BookingStatus | "all">("all");
-  const [sortBy, setSortBy] = useState<"time" | "stylist">("time");
-
   const todayStr = useMemo(() => {
     return new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kuala_Lumpur" });
   }, []);
+  const [year, setYear] = useState(now.getFullYear());
+  const [month, setMonth] = useState(now.getMonth());
+  const [selectedDate, setSelectedDate] = useState<string | null>(todayStr);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<BookingStatus | "all">("all");
+  const [sortBy, setSortBy] = useState<"time" | "stylist">("time");
 
   const { startDate, endDate } = useMemo(() => {
     const start = `${year}-${String(month + 1).padStart(2, "0")}-01`;
@@ -177,6 +189,7 @@ export default function BookingLogs() {
   });
 
   function goToPrevMonth() {
+    setSelectedDate(null);
     if (month === 0) {
       setYear(year - 1);
       setMonth(11);
@@ -191,6 +204,7 @@ export default function BookingLogs() {
     const isCurrentOrFuture = year > currentYear || (year === currentYear && month >= currentMonth);
     if (isCurrentOrFuture) return;
 
+    setSelectedDate(null);
     if (month === 11) {
       setYear(year + 1);
       setMonth(0);
@@ -210,9 +224,10 @@ export default function BookingLogs() {
     );
   }
 
-  // Only past bookings (date before today)
+  // Only past bookings (date before today), filtered to selected date
   const enriched = enrichBookings(bookings, customers, services, stylists)
-    .filter((b) => b.date < todayStr);
+    .filter((b) => b.date < todayStr)
+    .filter((b) => selectedDate ? b.date === selectedDate : true);
 
   const filtered = enriched
     .filter((b) => {
@@ -262,8 +277,10 @@ export default function BookingLogs() {
           <MiniCalendar
             year={year}
             month={month}
+            selectedDate={selectedDate}
             onPrev={goToPrevMonth}
             onNext={goToNextMonth}
+            onSelectDate={setSelectedDate}
           />
         </div>
 
@@ -313,7 +330,9 @@ export default function BookingLogs() {
           </div>
 
           <p className="text-[12px] text-[#9c9184]">
-            {filtered.length} booking{filtered.length !== 1 ? "s" : ""} in {MONTH_NAMES[month]} {year}
+            {selectedDate
+              ? `${filtered.length} booking${filtered.length !== 1 ? "s" : ""} on ${getDayLabel(selectedDate)}`
+              : "Select a date to view bookings"}
           </p>
         </div>
       </div>
@@ -321,7 +340,9 @@ export default function BookingLogs() {
       {/* Day-grouped sections */}
       {sortedDates.length === 0 ? (
         <div className="bg-card border border-border rounded-xl py-12 text-center text-[13px] text-[#9c9184]">
-          No past bookings for {MONTH_NAMES[month]} {year}
+          {selectedDate
+            ? `No past bookings on ${getDayLabel(selectedDate)}`
+            : "Select a date on the calendar to view bookings"}
         </div>
       ) : (
         <div className="space-y-8">

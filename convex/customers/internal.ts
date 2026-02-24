@@ -1,5 +1,6 @@
 import { internalQuery, internalMutation } from "../_generated/server";
 import { v } from "convex/values";
+import { titleCaseName } from "../lib/utils";
 
 export const getByPhone = internalQuery({
   args: { salonId: v.id("salons"), phone: v.string() },
@@ -44,6 +45,7 @@ export const create = internalMutation({
   handler: async (ctx, args) => {
     return await ctx.db.insert("customers", {
       ...args,
+      name: titleCaseName(args.name),
       noShowCount: 0,
       totalBookings: 0,
       isBlacklisted: false,

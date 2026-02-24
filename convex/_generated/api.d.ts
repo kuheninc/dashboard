@@ -26,6 +26,7 @@ import type * as customers_internal from "../customers/internal.js";
 import type * as customers_mutations from "../customers/mutations.js";
 import type * as customers_queries from "../customers/queries.js";
 import type * as http from "../http.js";
+import type * as lib_utils from "../lib/utils.js";
 import type * as messages_internal from "../messages/internal.js";
 import type * as messages_mutations from "../messages/mutations.js";
 import type * as messages_queries from "../messages/queries.js";
@@ -76,6 +77,7 @@ declare const fullApi: ApiFromModules<{
   "customers/mutations": typeof customers_mutations;
   "customers/queries": typeof customers_queries;
   http: typeof http;
+  "lib/utils": typeof lib_utils;
   "messages/internal": typeof messages_internal;
   "messages/mutations": typeof messages_mutations;
   "messages/queries": typeof messages_queries;
