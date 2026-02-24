@@ -7,7 +7,7 @@ import type { Id } from "@/convex/_generated/dataModel";
 import BookingStatusBadge from "@/components/dashboard/BookingStatusBadge";
 import { useDashboard } from "@/lib/dashboard-context";
 import { enrichBookings } from "@/lib/dashboard-helpers";
-import { Search, Filter, MoreHorizontal, Check, X, AlertTriangle, CheckCircle2, Star } from "lucide-react";
+import { Search, Filter, MoreHorizontal, Check, X, AlertTriangle, CheckCircle2, Star, ArrowUpDown } from "lucide-react";
 
 type BookingStatus =
   | "pending_approval"
@@ -214,6 +214,7 @@ export default function BookingTable() {
   }, []);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<BookingStatus | "all">("all");
+  const [sortBy, setSortBy] = useState<"time" | "stylist">("time");
 
   const bookings = useQuery(api.bookings.queries.getByDateRange, {
     salonId,
@@ -246,7 +247,15 @@ export default function BookingTable() {
       }
       return true;
     })
-    .sort((a, b) => a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime));
+    .sort((a, b) => {
+      const dateComp = a.date.localeCompare(b.date);
+      if (dateComp !== 0) return dateComp;
+      if (sortBy === "stylist") {
+        const stylistComp = a.stylistName.localeCompare(b.stylistName);
+        if (stylistComp !== 0) return stylistComp;
+      }
+      return a.startTime.localeCompare(b.startTime);
+    });
 
   // Group bookings by date
   const grouped = new Map<string, typeof filtered>();
@@ -292,6 +301,18 @@ export default function BookingTable() {
               </button>
             ))}
           </div>
+          <div className="h-4 w-px bg-border flex-shrink-0 mx-1" />
+          <button
+            onClick={() => setSortBy(sortBy === "time" ? "stylist" : "time")}
+            className={`flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium rounded-md transition-colors whitespace-nowrap ${
+              sortBy === "stylist"
+                ? "bg-primary text-primary-foreground"
+                : "bg-muted text-muted-foreground hover:bg-[rgba(166,139,107,0.08)]"
+            }`}
+          >
+            <ArrowUpDown className="w-3 h-3" />
+            Stylist
+          </button>
         </div>
       </div>
 
@@ -301,7 +322,7 @@ export default function BookingTable() {
           No upcoming bookings
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-8">
           {sortedDates.map((dateStr) => {
             const dayBookings = grouped.get(dateStr)!;
             const label = getDayLabel(dateStr, todayStr);

@@ -244,12 +244,11 @@ export default function OnboardingPage() {
         <div className="flex items-center justify-between">
           <button
             type="button"
-            onClick={() => setStep((s) => s - 1)}
-            disabled={step === 0}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-[13px] font-medium text-muted-foreground hover:text-foreground hover:bg-secondary disabled:opacity-0 disabled:pointer-events-none transition-colors"
+            onClick={() => step === 0 ? router.push("/sign-in") : setStep((s) => s - 1)}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-[13px] font-medium text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
-            Go back
+            {step === 0 ? "Back to sign in" : "Go back"}
           </button>
 
           {step < STEPS.length - 1 ? (

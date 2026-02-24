@@ -19,7 +19,7 @@ function CadenceIcon({ className }: { className?: string }) {
   );
 }
 
-type View = "signIn" | "signUp" | "resetEmail" | "resetCode";
+type View = "signIn" | "resetEmail" | "resetCode";
 
 export default function SignInPage() {
   const { signIn } = useAuthActions();
@@ -53,31 +53,6 @@ export default function SignInPage() {
       router.push("/dashboard");
     } catch {
       setError("Invalid email or password. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSignUp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
-
-    if (password.length < 8) {
-      setError("Password must be at least 8 characters.");
-      setLoading(false);
-      return;
-    }
-
-    try {
-      await signIn("password", {
-        email: email.trim(),
-        password,
-        flow: "signUp",
-      });
-      router.push("/dashboard");
-    } catch {
-      setError("Could not create account. This email may already be registered.");
     } finally {
       setLoading(false);
     }
@@ -292,8 +267,8 @@ export default function SignInPage() {
               {/* Divider */}
               <div className="my-6 border-t border-[rgba(42,36,32,0.06)]" />
 
-              {/* Forgot password + create account */}
-              <div className="flex items-center justify-between text-[13px] text-muted-foreground">
+              {/* Forgot password */}
+              <div className="text-[13px] text-muted-foreground">
                 <button
                   type="button"
                   onClick={() => {
@@ -305,17 +280,6 @@ export default function SignInPage() {
                 >
                   Can&apos;t remember your password?{" "}
                   <span className="text-[#a68b6b] font-medium">Reset it</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setView("signUp");
-                    setError(null);
-                    setSuccessMsg(null);
-                  }}
-                  className="text-[#a68b6b] hover:text-[#8a7055] font-medium transition-colors"
-                >
-                  Create account
                 </button>
               </div>
 
@@ -333,102 +297,6 @@ export default function SignInPage() {
                   <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               </div>
-            </div>
-          )}
-
-          {/* ─── View: Sign Up (existing admin) ─── */}
-          {view === "signUp" && (
-            <div className="cadence-animate">
-              <button
-                type="button"
-                onClick={() => {
-                  setView("signIn");
-                  setError(null);
-                }}
-                className="flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-foreground mb-6 transition-colors"
-              >
-                <ArrowLeft className="w-3.5 h-3.5" />
-                Back to sign in
-              </button>
-
-              <h2 className="font-display text-[28px] text-foreground mb-1.5">
-                Create your account
-              </h2>
-              <p className="text-[14px] text-muted-foreground mb-8">
-                Use the email your salon admin registered for you.
-              </p>
-
-              <form onSubmit={handleSignUp} className="space-y-5">
-                <div>
-                  <label className="font-label text-muted-foreground mb-2 block">
-                    Email
-                  </label>
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => {
-                      setEmail(e.target.value);
-                      setError(null);
-                    }}
-                    className={inputClass}
-                    placeholder="you@yoursalon.com"
-                    autoComplete="email"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="font-label text-muted-foreground mb-2 block">
-                    Password
-                  </label>
-                  <div className="relative">
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      value={password}
-                      onChange={(e) => {
-                        setPassword(e.target.value);
-                        setError(null);
-                      }}
-                      className={`${inputClass} pr-11`}
-                      placeholder="At least 8 characters"
-                      autoComplete="new-password"
-                      required
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword((v) => !v)}
-                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#9c9184] hover:text-foreground transition-colors"
-                    >
-                      {showPassword ? (
-                        <EyeOff className="w-[18px] h-[18px]" />
-                      ) : (
-                        <Eye className="w-[18px] h-[18px]" />
-                      )}
-                    </button>
-                  </div>
-                </div>
-
-                {error && (
-                  <div className="p-3 rounded-xl bg-[rgba(196,90,90,0.08)] border border-[rgba(196,90,90,0.15)]">
-                    <p className="text-[13px] text-[#c45a5a]">{error}</p>
-                  </div>
-                )}
-
-                <button
-                  type="submit"
-                  disabled={loading || !email || !password}
-                  className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-[14px] font-semibold text-[#1c1720] bg-gradient-to-r from-[#d1b799] to-[#c4a67e] hover:from-[#dcc5a8] hover:to-[#d1b799] disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-[0_1px_3px_rgba(0,0,0,0.1)]"
-                >
-                  {loading ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <>
-                      Create account
-                      <ArrowRight className="w-4 h-4" />
-                    </>
-                  )}
-                </button>
-              </form>
             </div>
           )}
 
