@@ -35,12 +35,13 @@ export const customerTools: Tool[] = [
   {
     name: "check_availability",
     description:
-      "Check available time slots for a specific service on a specific date. Returns available slots with stylist assignments.",
+      "Check available time slots for a specific service on a specific date. Returns available slots with stylist assignments. If a preferred stylist is specified, their slots are listed first.",
     input_schema: {
       type: "object" as const,
       properties: {
         serviceId: { type: "string", description: "The Convex document ID for the service (e.g. 'k57...'). Use the exact _id from the services list, NOT the service name." },
         date: { type: "string", description: "Date in YYYY-MM-DD format" },
+        preferredStylistId: { type: "string", description: "Optional stylist ID if customer has a preference. Preferred stylist's slots shown first." },
       },
       required: ["serviceId", "date"],
     },
@@ -48,7 +49,7 @@ export const customerTools: Tool[] = [
   {
     name: "create_booking",
     description:
-      "Create a new booking. Status will be pending_approval (needs admin confirmation).",
+      "Create a new booking. Status will be pending_approval (needs admin confirmation). Returns endTime for multi-service chaining.",
     input_schema: {
       type: "object" as const,
       properties: {
@@ -57,6 +58,7 @@ export const customerTools: Tool[] = [
         serviceId: { type: "string", description: "Service ID" },
         date: { type: "string", description: "Date in YYYY-MM-DD format" },
         startTime: { type: "string", description: "Start time in HH:MM format" },
+        preferredStylistId: { type: "string", description: "Optional: stylist the customer prefers. Stored as a request for admin to review." },
       },
       required: ["customerId", "stylistId", "serviceId", "date", "startTime"],
     },
@@ -94,6 +96,30 @@ export const customerTools: Tool[] = [
         bookingId: { type: "string", description: "Booking ID" },
       },
       required: ["bookingId"],
+    },
+  },
+  {
+    name: "send_location",
+    description:
+      "Send the salon's location to the customer. Use when customer asks for directions, address, or how to get to the salon.",
+    input_schema: {
+      type: "object" as const,
+      properties: {},
+      required: [],
+    },
+  },
+  {
+    name: "submit_feedback",
+    description:
+      "Submit customer feedback for a completed booking. Call this when the customer provides a rating (1-5) and optional comment during the feedback flow.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        bookingId: { type: "string", description: "Booking ID from flow data" },
+        rating: { type: "number", description: "Rating from 1 (poor) to 5 (excellent)" },
+        comment: { type: "string", description: "Optional feedback text" },
+      },
+      required: ["bookingId", "rating"],
     },
   },
 ];
@@ -280,6 +306,19 @@ export const adminTools: Tool[] = [
       type: "object" as const,
       properties: {
         bookingId: { type: "string", description: "Booking ID" },
+      },
+      required: ["bookingId"],
+    },
+  },
+  {
+    name: "reject_booking",
+    description:
+      "Reject a pending booking. Automatically offers the customer alternative time slots close to their original request. Use this instead of admin_cancel_booking for pending bookings.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        bookingId: { type: "string", description: "Booking ID to reject" },
+        reason: { type: "string", description: "Reason for rejection (e.g. 'stylist unavailable', 'slot conflict')" },
       },
       required: ["bookingId"],
     },

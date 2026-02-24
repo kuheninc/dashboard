@@ -10,7 +10,7 @@ import type { Id } from "@/convex/_generated/dataModel";
 export default function PendingApprovals() {
   const { salonId, salon, customers, services, stylists } = useDashboard();
   const approve = useMutation(api.bookings.mutations.approve);
-  const cancel = useMutation(api.bookings.mutations.cancel);
+  const reject = useMutation(api.bookings.mutations.reject);
   const bookings = useQuery(api.bookings.queries.getPendingApproval, { salonId });
 
   // Still loading
@@ -74,9 +74,15 @@ export default function PendingApprovals() {
                 </span>
               </div>
 
-              <p className="text-[12px] text-[#9c9184] mb-4">
+              <p className="text-[12px] text-[#9c9184] mb-1">
                 Stylist: {booking.stylistName}
               </p>
+              {booking.preferredStylistName && (
+                <p className="text-[12px] text-[#c4983e] mb-3">
+                  Requested: {booking.preferredStylistName}
+                </p>
+              )}
+              {!booking.preferredStylistName && <div className="mb-3" />}
 
               <div className="flex gap-2">
                 <button
@@ -103,9 +109,8 @@ export default function PendingApprovals() {
                 </button>
                 <button
                   onClick={() =>
-                    cancel({
+                    reject({
                       bookingId: booking._id as Id<"bookings">,
-                      cancelledBy: "cancelled_admin",
                     })
                   }
                   className="flex-1 h-8 text-[12px] font-medium rounded-lg inline-flex items-center justify-center border transition-colors"

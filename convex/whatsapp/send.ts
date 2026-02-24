@@ -37,3 +37,47 @@ export const sendTextMessage = internalAction({
     }
   },
 });
+
+export const sendLocationMessage = internalAction({
+  args: {
+    salonId: v.id("salons"),
+    recipientPhone: v.string(),
+    latitude: v.number(),
+    longitude: v.number(),
+    name: v.string(),
+    address: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const salon = await ctx.runQuery(internal.salons.internal.getById, {
+      salonId: args.salonId,
+    });
+    if (!salon) throw new Error("Salon not found");
+
+    const response = await fetch(
+      `https://graph.facebook.com/v21.0/${salon.waPhoneNumberId}/messages`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${salon.waAccessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          messaging_product: "whatsapp",
+          to: args.recipientPhone,
+          type: "location",
+          location: {
+            latitude: args.latitude,
+            longitude: args.longitude,
+            name: args.name,
+            address: args.address,
+          },
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      const errorBody = await response.text();
+      console.error("WhatsApp location send failed:", response.status, errorBody);
+    }
+  },
+});

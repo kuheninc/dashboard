@@ -1,7 +1,7 @@
 import { internalMutation } from "./_generated/server";
 
 // Mock-data-based seed: replaces all non-technical salon data
-// Preserves: waPhoneNumberId, waBusinessAccountId, waAccessToken, admins, ownerId
+// Preserves: waPhoneNumberId, waBusinessAccountId, waAccessToken, admins
 // Replaces: name, address, openingHours, services, stylists, customers, bookings
 
 export const seed = internalMutation({

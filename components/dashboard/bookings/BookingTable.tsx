@@ -1,13 +1,13 @@
 "use client";
 
 import { useState, useMemo, useRef, useEffect } from "react";
-import { useQuery, useMutation } from "convex/react";
+import { useQuery, useMutation, useAction } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import BookingStatusBadge from "@/components/dashboard/BookingStatusBadge";
 import { useDashboard } from "@/lib/dashboard-context";
 import { enrichBookings } from "@/lib/dashboard-helpers";
-import { Search, Filter, MoreHorizontal, Check, X, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { Search, Filter, MoreHorizontal, Check, X, AlertTriangle, CheckCircle2, Star } from "lucide-react";
 
 type BookingStatus =
   | "pending_approval"
@@ -17,9 +17,10 @@ type BookingStatus =
   | "completed"
   | "no_show"
   | "cancelled_customer"
-  | "cancelled_admin";
+  | "cancelled_admin"
+  | "rejected";
 
-const TERMINAL_STATUSES: BookingStatus[] = ["completed", "no_show", "cancelled_customer", "cancelled_admin"];
+const TERMINAL_STATUSES: BookingStatus[] = ["completed", "no_show", "cancelled_customer", "cancelled_admin", "rejected"];
 
 const statusOptions: { label: string; value: BookingStatus | "all" }[] = [
   { label: "All", value: "all" },
@@ -28,6 +29,7 @@ const statusOptions: { label: string; value: BookingStatus | "all" }[] = [
   { label: "Completed", value: "completed" },
   { label: "No Show", value: "no_show" },
   { label: "Cancelled", value: "cancelled_customer" },
+  { label: "Rejected", value: "rejected" },
 ];
 
 function getDateRange(): { startDate: string; endDate: string } {
@@ -71,15 +73,27 @@ function getAvatarColor(name: string): string {
   return avatarColors[Math.abs(hash) % avatarColors.length];
 }
 
-function ActionsDropdown({ bookingId, status }: { bookingId: Id<"bookings">; status: BookingStatus }) {
+function ActionsDropdown({
+  bookingId,
+  status,
+  feedbackRequestedAt,
+  feedbackRating,
+}: {
+  bookingId: Id<"bookings">;
+  status: BookingStatus;
+  feedbackRequestedAt?: number;
+  feedbackRating?: number;
+}) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const { salon } = useDashboard();
 
   const approveMut = useMutation(api.bookings.mutations.approve);
+  const rejectMut = useMutation(api.bookings.mutations.reject);
   const cancelMut = useMutation(api.bookings.mutations.cancel);
   const markCompletedMut = useMutation(api.bookings.mutations.markCompleted);
   const markNoShowMut = useMutation(api.bookings.mutations.markNoShow);
+  const requestFeedbackAction = useAction(api.bookings.actions.requestFeedback);
 
   useEffect(() => {
     if (!open) return;
@@ -90,9 +104,10 @@ function ActionsDropdown({ bookingId, status }: { bookingId: Id<"bookings">; sta
     return () => document.removeEventListener("mousedown", handleClick);
   }, [open]);
 
-  if (TERMINAL_STATUSES.includes(status)) return null;
+  // Terminal statuses with no actions (except completed which can have feedback)
+  if (TERMINAL_STATUSES.includes(status) && status !== "completed") return null;
 
-  const actions: { label: string; icon: React.ReactNode; onClick: () => void; color?: string }[] = [];
+  const actions: { label: string; icon: React.ReactNode; onClick: () => void; color?: string; disabled?: boolean }[] = [];
 
   if (status === "pending_approval") {
     actions.push({
@@ -104,9 +119,34 @@ function ActionsDropdown({ bookingId, status }: { bookingId: Id<"bookings">; sta
     actions.push({
       label: "Decline",
       icon: <X className="w-3.5 h-3.5" />,
-      onClick: () => cancelMut({ bookingId, cancelledBy: "cancelled_admin" }),
+      onClick: () => rejectMut({ bookingId }),
       color: "#c45a5a",
     });
+  } else if (status === "completed") {
+    if (feedbackRating) {
+      actions.push({
+        label: `Rated ${feedbackRating}/5`,
+        icon: <Star className="w-3.5 h-3.5" />,
+        onClick: () => {},
+        color: "#c4983e",
+        disabled: true,
+      });
+    } else if (feedbackRequestedAt) {
+      actions.push({
+        label: "Review Pending",
+        icon: <Star className="w-3.5 h-3.5" />,
+        onClick: () => {},
+        color: "#9c9184",
+        disabled: true,
+      });
+    } else {
+      actions.push({
+        label: "Request Review",
+        icon: <Star className="w-3.5 h-3.5" />,
+        onClick: () => requestFeedbackAction({ bookingId }),
+        color: "#c4983e",
+      });
+    }
   } else {
     actions.push({
       label: "Mark Completed",
@@ -142,10 +182,13 @@ function ActionsDropdown({ bookingId, status }: { bookingId: Id<"bookings">; sta
             <button
               key={action.label}
               onClick={() => {
-                action.onClick();
-                setOpen(false);
+                if (!action.disabled) {
+                  action.onClick();
+                  setOpen(false);
+                }
               }}
-              className="w-full flex items-center gap-2 px-3 py-2 text-[12px] font-medium hover:bg-[rgba(166,139,107,0.06)] transition-colors"
+              disabled={action.disabled}
+              className={`w-full flex items-center gap-2 px-3 py-2 text-[12px] font-medium transition-colors ${action.disabled ? "opacity-50 cursor-default" : "hover:bg-[rgba(166,139,107,0.06)]"}`}
               style={{ color: action.color }}
             >
               {action.icon}
@@ -307,6 +350,8 @@ export default function BookingTable() {
                     <ActionsDropdown
                       bookingId={booking._id as Id<"bookings">}
                       status={booking.status as BookingStatus}
+                      feedbackRequestedAt={booking.feedbackRequestedAt}
+                      feedbackRating={booking.feedbackRating}
                     />
                   </td>
                 </tr>

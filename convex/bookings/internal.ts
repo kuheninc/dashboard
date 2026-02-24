@@ -1,4 +1,5 @@
-import { internalQuery, internalMutation } from "../_generated/server";
+import { internalQuery, internalMutation, internalAction } from "../_generated/server";
+import { internal } from "../_generated/api";
 import { v } from "convex/values";
 
 export const getByDate = internalQuery({
@@ -87,6 +88,7 @@ export const create = internalMutation({
     date: v.string(),
     startTime: v.string(),
     createdBy: v.union(v.literal("customer"), v.literal("admin")),
+    preferredStylistId: v.optional(v.id("stylists")),
   },
   handler: async (ctx, args) => {
     const service = await ctx.db.get(args.serviceId);
@@ -95,6 +97,12 @@ export const create = internalMutation({
     const endTime = addMinutesToTime(args.startTime, service.durationMinutes);
     const status =
       args.createdBy === "admin" ? "confirmed" : "pending_approval";
+
+    let preferredStylistName: string | undefined;
+    if (args.preferredStylistId) {
+      const prefStylist = await ctx.db.get(args.preferredStylistId);
+      preferredStylistName = prefStylist?.name;
+    }
 
     const bookingId = await ctx.db.insert("bookings", {
       salonId: args.salonId,
@@ -106,6 +114,8 @@ export const create = internalMutation({
       endTime,
       status,
       createdBy: args.createdBy,
+      preferredStylistId: args.preferredStylistId,
+      preferredStylistName,
     });
 
     const customer = await ctx.db.get(args.customerId);
@@ -122,9 +132,19 @@ export const create = internalMutation({
 export const approve = internalMutation({
   args: { bookingId: v.id("bookings"), adminPhone: v.string() },
   handler: async (ctx, args) => {
+    const booking = await ctx.db.get(args.bookingId);
+    if (!booking) throw new Error("Booking not found");
+
     await ctx.db.patch(args.bookingId, {
       status: "confirmed",
       approvedBy: args.adminPhone,
+    });
+
+    // Schedule customer confirmation notification + GCal sync
+    await ctx.scheduler.runAfter(0, internal.bookings.internal.notifyCustomer, {
+      bookingId: args.bookingId,
+      salonId: booking.salonId,
+      type: "approved",
     });
   },
 });
@@ -153,6 +173,22 @@ export const cancel = internalMutation({
       status: args.cancelledBy,
       cancelledReason: args.reason,
     });
+
+    if (args.cancelledBy === "cancelled_admin") {
+      // Notify customer + GCal cleanup
+      await ctx.scheduler.runAfter(0, internal.bookings.internal.notifyCustomer, {
+        bookingId: args.bookingId,
+        salonId: booking.salonId,
+        type: "cancelled",
+        reason: args.reason,
+      });
+    } else {
+      // Customer-initiated cancel: still need GCal cleanup
+      await ctx.scheduler.runAfter(0, internal.calendar.sync.deleteEvent, {
+        salonId: booking.salonId,
+        bookingId: args.bookingId,
+      });
+    }
   },
 });
 
@@ -179,6 +215,12 @@ export const markNoShow = internalMutation({
       bookingId: args.bookingId,
       date: booking.date,
       flaggedAsRepeatOffender: (customer?.noShowCount ?? 0) + 1 >= 3,
+    });
+
+    // GCal cleanup
+    await ctx.scheduler.runAfter(0, internal.calendar.sync.deleteEvent, {
+      salonId: booking.salonId,
+      bookingId: args.bookingId,
     });
   },
 });
@@ -227,6 +269,132 @@ export const setCheckinScheduledId = internalMutation({
   handler: async (ctx, args) => {
     await ctx.db.patch(args.bookingId, {
       checkinScheduledId: args.scheduledId,
+    });
+  },
+});
+
+export const notifyCustomer = internalAction({
+  args: {
+    bookingId: v.id("bookings"),
+    salonId: v.id("salons"),
+    type: v.union(
+      v.literal("approved"),
+      v.literal("cancelled"),
+      v.literal("rescheduled")
+    ),
+    reason: v.optional(v.string()),
+    newDate: v.optional(v.string()),
+    newTime: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const booking = await ctx.runQuery(internal.bookings.internal.getById, {
+      bookingId: args.bookingId,
+    });
+    if (!booking) return;
+
+    const customer = await ctx.runQuery(internal.customers.internal.getById, {
+      customerId: booking.customerId,
+    });
+    if (!customer) return;
+
+    const service = await ctx.runQuery(internal.services.internal.getById, {
+      serviceId: booking.serviceId,
+    });
+    const serviceName = service?.name ?? "Service";
+
+    let text: string;
+    switch (args.type) {
+      case "approved":
+        text = `✅ Your booking is confirmed!\n${serviceName} on ${booking.date} at ${booking.startTime}.\nSee you there!`;
+        // Sync to Google Calendar
+        ctx.runAction(internal.calendar.sync.createEvent, {
+          salonId: args.salonId,
+          bookingId: args.bookingId,
+        }).catch(() => {});
+        break;
+      case "cancelled":
+        text = `❌ Your booking for ${serviceName} on ${booking.date} at ${booking.startTime} has been cancelled by the salon.`;
+        if (args.reason) text += `\nReason: ${args.reason}`;
+        text += `\nPlease message us if you'd like to rebook.`;
+        // Remove from Google Calendar
+        ctx.runAction(internal.calendar.sync.deleteEvent, {
+          salonId: args.salonId,
+          bookingId: args.bookingId,
+        }).catch(() => {});
+        break;
+      case "rescheduled":
+        text = `📅 Your booking has been rescheduled.\n${serviceName} is now on ${args.newDate ?? booking.date} at ${args.newTime ?? booking.startTime}.\nLet us know if this doesn't work for you!`;
+        break;
+    }
+
+    await ctx.runAction(internal.whatsapp.send.sendTextMessage, {
+      salonId: args.salonId,
+      recipientPhone: customer.phone,
+      text,
+    });
+  },
+});
+
+// Keep backward-compatible alias for existing scheduled jobs
+export const notifyApproval = internalAction({
+  args: {
+    bookingId: v.id("bookings"),
+    salonId: v.id("salons"),
+  },
+  handler: async (ctx, args) => {
+    await ctx.runAction(internal.bookings.internal.notifyCustomer, {
+      ...args,
+      type: "approved",
+    });
+  },
+});
+
+export const reject = internalMutation({
+  args: {
+    bookingId: v.id("bookings"),
+    reason: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const booking = await ctx.db.get(args.bookingId);
+    if (!booking) throw new Error("Booking not found");
+    if (booking.status !== "pending_approval") {
+      throw new Error("Can only reject pending bookings");
+    }
+    if (booking.reminderScheduledId) {
+      await ctx.scheduler.cancel(booking.reminderScheduledId);
+    }
+    await ctx.db.patch(args.bookingId, {
+      status: "rejected",
+      rejectedReason: args.reason,
+    });
+  },
+});
+
+export const requestFeedback = internalMutation({
+  args: { bookingId: v.id("bookings") },
+  handler: async (ctx, args) => {
+    const booking = await ctx.db.get(args.bookingId);
+    if (!booking) throw new Error("Booking not found");
+    if (booking.status !== "completed") throw new Error("Can only request feedback for completed bookings");
+    if (booking.feedbackRequestedAt) throw new Error("Feedback already requested");
+    await ctx.db.patch(args.bookingId, {
+      feedbackRequestedAt: Date.now(),
+    });
+  },
+});
+
+export const submitFeedback = internalMutation({
+  args: {
+    bookingId: v.id("bookings"),
+    rating: v.number(),
+    comment: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    if (args.rating < 1 || args.rating > 5) throw new Error("Rating must be 1-5");
+    await ctx.db.patch(args.bookingId, {
+      feedbackRating: args.rating,
+      feedbackComment: args.comment,
+      feedbackSubmittedAt: Date.now(),
     });
   },
 });

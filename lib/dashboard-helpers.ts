@@ -15,6 +15,10 @@ export interface EnrichedBooking {
   serviceName: string;
   stylistName: string;
   servicePrice: number;
+  preferredStylistName?: string;
+  feedbackRequestedAt?: number;
+  feedbackRating?: number;
+  feedbackComment?: string;
 }
 
 export function enrichBookings(
@@ -41,6 +45,10 @@ export function enrichBookings(
     serviceName: serviceMap.get(b.serviceId)?.name ?? "Unknown",
     stylistName: stylistMap.get(b.stylistId)?.name ?? "Unknown",
     servicePrice: serviceMap.get(b.serviceId)?.priceRM ?? 0,
+    preferredStylistName: (b as Record<string, unknown>).preferredStylistName as string | undefined,
+    feedbackRequestedAt: (b as Record<string, unknown>).feedbackRequestedAt as number | undefined,
+    feedbackRating: (b as Record<string, unknown>).feedbackRating as number | undefined,
+    feedbackComment: (b as Record<string, unknown>).feedbackComment as string | undefined,
   }));
 }
 

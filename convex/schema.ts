@@ -1,13 +1,9 @@
 import { defineSchema, defineTable } from "convex/server";
-import { authTables } from "@convex-dev/auth/server";
 import { v } from "convex/values";
 
 export default defineSchema({
-  ...authTables,
-
   salons: defineTable({
     name: v.string(),
-    ownerId: v.optional(v.id("users")),
     waPhoneNumberId: v.string(),
     waBusinessAccountId: v.string(),
     waAccessToken: v.string(),
@@ -36,11 +32,12 @@ export default defineSchema({
     timezone: v.string(),
     googleCalendarId: v.optional(v.string()),
     googleServiceAccountKey: v.optional(v.string()),
+    latitude: v.optional(v.number()),
+    longitude: v.optional(v.number()),
     isActive: v.boolean(),
   })
     .index("by_waPhoneNumberId", ["waPhoneNumberId"])
-    .index("by_isActive", ["isActive"])
-    .index("by_ownerId", ["ownerId"]),
+    .index("by_isActive", ["isActive"]),
 
   stylists: defineTable({
     salonId: v.id("salons"),
@@ -100,11 +97,19 @@ export default defineSchema({
       v.literal("completed"),
       v.literal("no_show"),
       v.literal("cancelled_customer"),
-      v.literal("cancelled_admin")
+      v.literal("cancelled_admin"),
+      v.literal("rejected")
     ),
     customerConfirmedAt: v.optional(v.number()),
     approvedBy: v.optional(v.string()),
     cancelledReason: v.optional(v.string()),
+    rejectedReason: v.optional(v.string()),
+    preferredStylistId: v.optional(v.id("stylists")),
+    preferredStylistName: v.optional(v.string()),
+    feedbackRequestedAt: v.optional(v.number()),
+    feedbackRating: v.optional(v.number()),
+    feedbackComment: v.optional(v.string()),
+    feedbackSubmittedAt: v.optional(v.number()),
     googleEventId: v.optional(v.string()),
     reminderScheduledId: v.optional(v.id("_scheduled_functions")),
     checkinScheduledId: v.optional(v.id("_scheduled_functions")),
@@ -128,7 +133,8 @@ export default defineSchema({
       v.literal("cancel_flow"),
       v.literal("awaiting_reminder_response"),
       v.literal("awaiting_checkin_response"),
-      v.literal("admin_updating")
+      v.literal("admin_updating"),
+      v.literal("awaiting_feedback")
     ),
     flowData: v.optional(v.any()),
     lastMessageAt: v.number(),

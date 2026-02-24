@@ -6,7 +6,8 @@ export type BookingStatus =
   | "completed"
   | "no_show"
   | "cancelled_customer"
-  | "cancelled_admin";
+  | "cancelled_admin"
+  | "rejected";
 
 const statusConfig: Record<
   BookingStatus,
@@ -51,6 +52,11 @@ const statusConfig: Record<
     label: "Cancelled",
     color: "#c45a5a",
     bg: "rgba(196,90,90,0.06)",
+  },
+  rejected: {
+    label: "Rejected",
+    color: "#c45a5a",
+    bg: "rgba(196,90,90,0.08)",
   },
 };
 

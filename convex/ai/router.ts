@@ -50,6 +50,7 @@ export const handleMessage = internalAction({
       content: args.messageBody,
     });
 
+    try {
     // 5. Load context
     const staleThreshold = Date.now() - 24 * 60 * 60 * 1000;
     const messageLimit =
@@ -196,6 +197,23 @@ export const handleMessage = internalAction({
       recipientPhone: args.senderPhone,
       text: replyText,
     });
+
+    } catch (error) {
+      console.error(
+        `handleMessage failed for salon=${salon._id} phone=${args.senderPhone} role=${role}:`,
+        error
+      );
+      // Send fallback message so the customer isn't left hanging
+      try {
+        await ctx.runAction(internal.whatsapp.send.sendTextMessage, {
+          salonId: salon._id,
+          recipientPhone: args.senderPhone,
+          text: "Sorry, something went wrong on our end. Please try again in a moment!",
+        });
+      } catch (sendError) {
+        console.error("Failed to send error fallback message:", sendError);
+      }
+    }
   },
 });
 
@@ -262,7 +280,8 @@ async function executeTool(
         ctx,
         salonId,
         match._id as Id<"services">,
-        input.date as string
+        input.date as string,
+        input.preferredStylistId as string | undefined
       );
     }
 
@@ -277,26 +296,50 @@ async function executeTool(
           date: input.date as string,
           startTime: input.startTime as string,
           createdBy: "customer" as const,
+          preferredStylistId: input.preferredStylistId
+            ? (input.preferredStylistId as Id<"stylists">)
+            : undefined,
         }
       );
       // Notify admins about pending booking
       const salon = await ctx.runQuery(internal.salons.internal.getById, { salonId });
+      const service = await ctx.runQuery(internal.services.internal.getById, {
+        serviceId: input.serviceId as Id<"services">,
+      });
       if (salon) {
         const customer = await ctx.runQuery(internal.customers.internal.getById, {
           customerId: input.customerId as Id<"customers">,
         });
-        const service = await ctx.runQuery(internal.services.internal.getById, {
-          serviceId: input.serviceId as Id<"services">,
-        });
+        // Include stylist preference in admin notification
+        let preferenceNote = "";
+        if (input.preferredStylistId) {
+          const stylists = await ctx.runQuery(internal.stylists.internal.listBySalon, { salonId });
+          const prefStylist = stylists.find(
+            (s: { _id: string }) => s._id === input.preferredStylistId
+          );
+          if (prefStylist) {
+            preferenceNote = `\nCustomer requested stylist: ${prefStylist.name}`;
+          }
+        }
         for (const adminPhone of salon.adminPhones) {
           await ctx.runAction(internal.whatsapp.send.sendTextMessage, {
             salonId,
             recipientPhone: adminPhone,
-            text: `📋 New booking request:\n${customer?.name ?? "Unknown"} wants ${service?.name ?? "a service"} on ${input.date} at ${input.startTime}.\n\nReply to approve or manage.`,
+            text: `📋 New booking request:\n${customer?.name ?? "Unknown"} wants ${service?.name ?? "a service"} on ${input.date} at ${input.startTime}.${preferenceNote}\n\nReply to approve or manage.`,
           });
         }
       }
-      return { success: true, bookingId, status: "pending_approval" };
+      // Return endTime for multi-service chaining
+      const endTimeMinutes = timeToMinutes(input.startTime as string) + (service?.durationMinutes ?? 0);
+      return {
+        success: true,
+        bookingId,
+        status: "pending_approval",
+        date: input.date,
+        startTime: input.startTime,
+        endTime: minutesToTime(endTimeMinutes),
+        serviceName: service?.name ?? "Unknown",
+      };
     }
 
     case "get_my_bookings": {
@@ -316,23 +359,110 @@ async function executeTool(
     }
 
     case "cancel_booking": {
-      // Delete GCal event before cancelling (need booking data)
-      ctx.runAction(internal.calendar.sync.deleteEvent, {
-        salonId,
-        bookingId: input.bookingId as Id<"bookings">,
-      }).catch(() => {});
+      // Fetch booking details before cancelling for reschedule context
+      const cancelledBooking = await ctx.runQuery(
+        internal.bookings.internal.getById,
+        { bookingId: input.bookingId as Id<"bookings"> }
+      );
       await ctx.runMutation(internal.bookings.internal.cancel, {
         bookingId: input.bookingId as Id<"bookings">,
         cancelledBy: role === "admin" ? "cancelled_admin" as const : "cancelled_customer" as const,
         reason: (input.reason as string) || undefined,
       });
-      return { success: true };
+      // If cancelling from a reminder response, set up reschedule flow
+      const conversation = await ctx.runQuery(
+        internal.conversations.internal.getBySalonPhone,
+        { salonId, phone: senderPhone }
+      );
+      if (conversation && conversation.state === "awaiting_reminder_response" && cancelledBooking) {
+        await ctx.runMutation(internal.conversations.internal.updateState, {
+          conversationId: conversation._id,
+          state: "reschedule_flow",
+          flowData: {
+            originalServiceId: cancelledBooking.serviceId,
+            originalDate: cancelledBooking.date,
+            originalStartTime: cancelledBooking.startTime,
+            customerId: cancelledBooking.customerId,
+          },
+        });
+      }
+      return {
+        success: true,
+        cancelledServiceId: cancelledBooking?.serviceId,
+        cancelledDate: cancelledBooking?.date,
+        cancelledStartTime: cancelledBooking?.startTime,
+      };
     }
 
     case "confirm_attendance": {
       await ctx.runMutation(internal.bookings.internal.customerConfirm, {
         bookingId: input.bookingId as Id<"bookings">,
       });
+      return { success: true };
+    }
+
+    case "send_location": {
+      const salonData = await ctx.runQuery(internal.salons.internal.getById, { salonId });
+      if (!salonData) return { error: "Salon not found" };
+      if ((salonData as Record<string, unknown>).latitude && (salonData as Record<string, unknown>).longitude) {
+        await ctx.runAction(internal.whatsapp.send.sendLocationMessage, {
+          salonId,
+          recipientPhone: senderPhone,
+          latitude: (salonData as Record<string, unknown>).latitude as number,
+          longitude: (salonData as Record<string, unknown>).longitude as number,
+          name: salonData.name,
+          address: salonData.address,
+        });
+        return {
+          success: true,
+          sent: "location_pin",
+          address: salonData.address,
+          googleMapsLink: salonData.googleMapsLink ?? null,
+        };
+      } else {
+        return {
+          success: true,
+          sent: "text_only",
+          address: salonData.address,
+          googleMapsLink: salonData.googleMapsLink ?? null,
+          note: "No coordinates stored. Include the Google Maps link and address in your text reply.",
+        };
+      }
+    }
+
+    case "submit_feedback": {
+      await ctx.runMutation(internal.bookings.internal.submitFeedback, {
+        bookingId: input.bookingId as Id<"bookings">,
+        rating: input.rating as number,
+        comment: (input.comment as string) || undefined,
+      });
+      // Reset conversation to idle
+      const fbConversation = await ctx.runQuery(
+        internal.conversations.internal.getBySalonPhone,
+        { salonId, phone: senderPhone }
+      );
+      if (fbConversation) {
+        await ctx.runMutation(internal.conversations.internal.resetToIdle, {
+          conversationId: fbConversation._id,
+        });
+      }
+      // Notify admin about the feedback
+      const fbSalon = await ctx.runQuery(internal.salons.internal.getById, { salonId });
+      const fbBooking = await ctx.runQuery(internal.bookings.internal.getById, {
+        bookingId: input.bookingId as Id<"bookings">,
+      });
+      if (fbSalon && fbBooking) {
+        const fbCustomer = await ctx.runQuery(internal.customers.internal.getById, {
+          customerId: fbBooking.customerId,
+        });
+        for (const adminPhone of fbSalon.adminPhones) {
+          await ctx.runAction(internal.whatsapp.send.sendTextMessage, {
+            salonId,
+            recipientPhone: adminPhone,
+            text: `⭐ New feedback from ${fbCustomer?.name ?? "customer"}: ${input.rating}/5${input.comment ? ` — "${input.comment}"` : ""}`,
+          });
+        }
+      }
       return { success: true };
     }
 
@@ -393,34 +523,11 @@ async function executeTool(
     }
 
     case "approve_booking": {
+      // Mutation handles notification + GCal sync via scheduled action
       await ctx.runMutation(internal.bookings.internal.approve, {
         bookingId: input.bookingId as Id<"bookings">,
         adminPhone: senderPhone,
       });
-      // Notify customer
-      const booking = await ctx.runQuery(internal.bookings.internal.getById, {
-        bookingId: input.bookingId as Id<"bookings">,
-      });
-      if (booking) {
-        const customer = await ctx.runQuery(internal.customers.internal.getById, {
-          customerId: booking.customerId,
-        });
-        const service = await ctx.runQuery(internal.services.internal.getById, {
-          serviceId: booking.serviceId,
-        });
-        if (customer) {
-          await ctx.runAction(internal.whatsapp.send.sendTextMessage, {
-            salonId,
-            recipientPhone: customer.phone,
-            text: `✅ Your booking is confirmed!\n${service?.name ?? "Service"} on ${booking.date} at ${booking.startTime}.\nSee you there!`,
-          });
-        }
-        // Sync to Google Calendar (fire-and-forget)
-        ctx.runAction(internal.calendar.sync.createEvent, {
-          salonId,
-          bookingId: input.bookingId as Id<"bookings">,
-        }).catch(() => {});
-      }
       return { success: true };
     }
 
@@ -463,10 +570,6 @@ async function executeTool(
     }
 
     case "admin_cancel_booking": {
-      ctx.runAction(internal.calendar.sync.deleteEvent, {
-        salonId,
-        bookingId: input.bookingId as Id<"bookings">,
-      }).catch(() => {});
       await ctx.runMutation(internal.bookings.internal.cancel, {
         bookingId: input.bookingId as Id<"bookings">,
         cancelledBy: "cancelled_admin" as const,
@@ -555,16 +658,13 @@ async function executeTool(
           startTime: b.startTime,
           customerName: customer?.name ?? "Unknown",
           serviceName: service?.name ?? "Unknown",
+          preferredStylistName: (b as Record<string, unknown>).preferredStylistName ?? null,
         });
       }
       return enriched;
     }
 
     case "mark_no_show": {
-      ctx.runAction(internal.calendar.sync.deleteEvent, {
-        salonId,
-        bookingId: input.bookingId as Id<"bookings">,
-      }).catch(() => {});
       await ctx.runMutation(internal.bookings.internal.markNoShow, {
         bookingId: input.bookingId as Id<"bookings">,
       });
@@ -578,6 +678,77 @@ async function executeTool(
       return { success: true };
     }
 
+    case "reject_booking": {
+      const rejectBooking = await ctx.runQuery(internal.bookings.internal.getById, {
+        bookingId: input.bookingId as Id<"bookings">,
+      });
+      if (!rejectBooking) return { error: "Booking not found" };
+      if (rejectBooking.status !== "pending_approval") {
+        return { error: "Can only reject pending bookings" };
+      }
+      await ctx.runMutation(internal.bookings.internal.reject, {
+        bookingId: input.bookingId as Id<"bookings">,
+        reason: (input.reason as string) || undefined,
+      });
+      // GCal cleanup
+      ctx.runAction(internal.calendar.sync.deleteEvent, {
+        salonId,
+        bookingId: input.bookingId as Id<"bookings">,
+      }).catch(() => {});
+      // Find alternatives for customer
+      const rejectCustomer = await ctx.runQuery(internal.customers.internal.getById, {
+        customerId: rejectBooking.customerId,
+      });
+      const rejectService = await ctx.runQuery(internal.services.internal.getById, {
+        serviceId: rejectBooking.serviceId,
+      });
+      const alternatives = await checkAvailability(
+        ctx, salonId, rejectBooking.serviceId, rejectBooking.date
+      );
+      const altSlots = (alternatives as { slots?: { startTime: string; endTime: string }[] })?.slots ?? [];
+      // Sort by proximity to original time
+      const origMinutes = timeToMinutes(rejectBooking.startTime);
+      const sortedAlts = altSlots
+        .map((s) => ({ ...s, distance: Math.abs(timeToMinutes(s.startTime) - origMinutes) }))
+        .sort((a, b) => a.distance - b.distance)
+        .slice(0, 5);
+
+      if (rejectCustomer) {
+        let altText: string;
+        if (sortedAlts.length > 0) {
+          const slotList = sortedAlts
+            .map((s, i) => `${i + 1}. ${s.startTime} - ${s.endTime}`)
+            .join("\n");
+          altText = `We're sorry, your ${rejectService?.name ?? "appointment"} request for ${rejectBooking.date} at ${rejectBooking.startTime} couldn't be accommodated.\n\nHere are some alternative times:\n${slotList}\n\nWould you like to book one of these? Or reply with a different date.`;
+        } else {
+          altText = `We're sorry, your ${rejectService?.name ?? "appointment"} request for ${rejectBooking.date} at ${rejectBooking.startTime} couldn't be accommodated, and no other slots are available on that date.\n\nWould you like to try a different date?`;
+        }
+        await ctx.runAction(internal.whatsapp.send.sendTextMessage, {
+          salonId,
+          recipientPhone: rejectCustomer.phone,
+          text: altText,
+        });
+        // Set customer conversation state for rebooking
+        const rejectConv = await ctx.runQuery(
+          internal.conversations.internal.getBySalonPhone,
+          { salonId, phone: rejectCustomer.phone }
+        );
+        if (rejectConv) {
+          await ctx.runMutation(internal.conversations.internal.updateState, {
+            conversationId: rejectConv._id,
+            state: "reschedule_flow",
+            flowData: {
+              originalServiceId: rejectBooking.serviceId,
+              originalDate: rejectBooking.date,
+              originalStartTime: rejectBooking.startTime,
+              customerId: rejectBooking.customerId,
+            },
+          });
+        }
+      }
+      return { success: true, alternativesOffered: sortedAlts.length, customerNotified: !!rejectCustomer };
+    }
+
     default:
       return { error: `Unknown tool: ${toolName}` };
   }
@@ -588,7 +759,8 @@ async function checkAvailability(
   ctx: { runQuery: Function },
   salonId: Id<"salons">,
   serviceId: Id<"services">,
-  date: string
+  date: string,
+  preferredStylistId?: string
 ): Promise<unknown> {
   const salon = await ctx.runQuery(internal.salons.internal.getById, { salonId });
   if (!salon) return { error: "Salon not found" };
@@ -626,7 +798,7 @@ async function checkAvailability(
     );
     const activeBookings = existingBookings.filter(
       (b: Record<string, unknown>) =>
-        b.status !== "cancelled_customer" && b.status !== "cancelled_admin" && b.status !== "no_show"
+        b.status !== "cancelled_customer" && b.status !== "cancelled_admin" && b.status !== "no_show" && b.status !== "rejected"
     );
 
     // Generate 15-min increment slots within stylist working hours
@@ -655,12 +827,25 @@ async function checkAvailability(
     }
   }
 
+  // If preferred stylist specified, sort their slots first
+  if (preferredStylistId) {
+    slots.sort((a, b) => {
+      const aPref = a.stylistId === preferredStylistId ? 0 : 1;
+      const bPref = b.stylistId === preferredStylistId ? 0 : 1;
+      if (aPref !== bPref) return aPref - bPref;
+      return a.startTime.localeCompare(b.startTime);
+    });
+  }
+
   return {
     available: slots.length > 0,
     date,
     serviceName: service.name,
     durationMinutes: service.durationMinutes,
-    slots: slots.slice(0, 10), // Return max 10 options
+    preferredStylistAvailable: preferredStylistId
+      ? slots.some((s) => s.stylistId === preferredStylistId)
+      : undefined,
+    slots: slots.slice(0, 10),
   };
 }
 

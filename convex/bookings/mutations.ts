@@ -1,4 +1,5 @@
 import { mutation } from "../_generated/server";
+import { internal } from "../_generated/api";
 import { v } from "convex/values";
 
 export const create = mutation({
@@ -10,6 +11,7 @@ export const create = mutation({
     date: v.string(),
     startTime: v.string(),
     createdBy: v.union(v.literal("customer"), v.literal("admin")),
+    preferredStylistId: v.optional(v.id("stylists")),
   },
   handler: async (ctx, args) => {
     const service = await ctx.db.get(args.serviceId);
@@ -18,6 +20,12 @@ export const create = mutation({
     const endTime = addMinutesToTime(args.startTime, service.durationMinutes);
     const status =
       args.createdBy === "admin" ? "confirmed" : "pending_approval";
+
+    let preferredStylistName: string | undefined;
+    if (args.preferredStylistId) {
+      const prefStylist = await ctx.db.get(args.preferredStylistId);
+      preferredStylistName = prefStylist?.name;
+    }
 
     const bookingId = await ctx.db.insert("bookings", {
       salonId: args.salonId,
@@ -29,6 +37,8 @@ export const create = mutation({
       endTime,
       status,
       createdBy: args.createdBy,
+      preferredStylistId: args.preferredStylistId,
+      preferredStylistName,
     });
 
     // Increment customer's total bookings
@@ -46,12 +56,21 @@ export const create = mutation({
 export const approve = mutation({
   args: {
     bookingId: v.id("bookings"),
-    adminPhone: v.string(),
+    adminPhone: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    const booking = await ctx.db.get(args.bookingId);
+    if (!booking) throw new Error("Booking not found");
+
     await ctx.db.patch(args.bookingId, {
       status: "confirmed",
-      approvedBy: args.adminPhone,
+      approvedBy: args.adminPhone ?? "dashboard",
+    });
+
+    await ctx.scheduler.runAfter(0, internal.bookings.internal.notifyCustomer, {
+      bookingId: args.bookingId,
+      salonId: booking.salonId,
+      type: "approved",
     });
   },
 });
@@ -79,7 +98,6 @@ export const cancel = mutation({
     const booking = await ctx.db.get(args.bookingId);
     if (!booking) throw new Error("Booking not found");
 
-    // Cancel scheduled reminders/check-ins
     if (booking.reminderScheduledId) {
       await ctx.scheduler.cancel(booking.reminderScheduledId);
     }
@@ -91,6 +109,20 @@ export const cancel = mutation({
       status: args.cancelledBy,
       cancelledReason: args.reason,
     });
+
+    if (args.cancelledBy === "cancelled_admin") {
+      await ctx.scheduler.runAfter(0, internal.bookings.internal.notifyCustomer, {
+        bookingId: args.bookingId,
+        salonId: booking.salonId,
+        type: "cancelled",
+        reason: args.reason,
+      });
+    } else {
+      await ctx.scheduler.runAfter(0, internal.calendar.sync.deleteEvent, {
+        salonId: booking.salonId,
+        bookingId: args.bookingId,
+      });
+    }
   },
 });
 
@@ -102,7 +134,6 @@ export const markNoShow = mutation({
 
     await ctx.db.patch(args.bookingId, { status: "no_show" });
 
-    // Increment customer no-show count
     const customer = await ctx.db.get(booking.customerId);
     if (customer) {
       const newCount = customer.noShowCount + 1;
@@ -112,13 +143,17 @@ export const markNoShow = mutation({
       });
     }
 
-    // Create no-show log entry
     await ctx.db.insert("noShowLog", {
       salonId: booking.salonId,
       customerId: booking.customerId,
       bookingId: args.bookingId,
       date: booking.date,
       flaggedAsRepeatOffender: (customer?.noShowCount ?? 0) + 1 >= 3,
+    });
+
+    await ctx.scheduler.runAfter(0, internal.calendar.sync.deleteEvent, {
+      salonId: booking.salonId,
+      bookingId: args.bookingId,
     });
   },
 });
@@ -158,6 +193,33 @@ export const markReminderSent = mutation({
   args: { bookingId: v.id("bookings") },
   handler: async (ctx, args) => {
     await ctx.db.patch(args.bookingId, { status: "reminder_sent" });
+  },
+});
+
+export const reject = mutation({
+  args: {
+    bookingId: v.id("bookings"),
+    reason: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const booking = await ctx.db.get(args.bookingId);
+    if (!booking) throw new Error("Booking not found");
+    if (booking.status !== "pending_approval") {
+      throw new Error("Can only reject pending bookings");
+    }
+    if (booking.reminderScheduledId) {
+      await ctx.scheduler.cancel(booking.reminderScheduledId);
+    }
+    await ctx.db.patch(args.bookingId, {
+      status: "rejected",
+      rejectedReason: args.reason,
+    });
+
+    // Notify customer with alternatives via scheduled action
+    await ctx.scheduler.runAfter(0, internal.bookings.actions.notifyRejectionWithAlternatives, {
+      bookingId: args.bookingId,
+      salonId: booking.salonId,
+    });
   },
 });
 
