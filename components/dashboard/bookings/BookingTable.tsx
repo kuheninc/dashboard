@@ -22,14 +22,12 @@ type BookingStatus =
 
 const TERMINAL_STATUSES: BookingStatus[] = ["completed", "no_show", "cancelled_customer", "cancelled_admin", "rejected"];
 
+const UPCOMING_STATUSES: BookingStatus[] = ["pending_approval", "confirmed", "reminder_sent", "customer_confirmed"];
+
 const statusOptions: { label: string; value: BookingStatus | "all" }[] = [
   { label: "All", value: "all" },
   { label: "Pending", value: "pending_approval" },
   { label: "Confirmed", value: "confirmed" },
-  { label: "Completed", value: "completed" },
-  { label: "No Show", value: "no_show" },
-  { label: "Cancelled", value: "cancelled_customer" },
-  { label: "Rejected", value: "rejected" },
 ];
 
 function getDateRange(): { startDate: string; endDate: string } {
@@ -233,7 +231,8 @@ export default function BookingTable() {
     );
   }
 
-  const enriched = enrichBookings(bookings, customers, services, stylists);
+  const enriched = enrichBookings(bookings, customers, services, stylists)
+    .filter((b) => UPCOMING_STATUSES.includes(b.status as BookingStatus));
 
   const filtered = enriched
     .filter((b) => {

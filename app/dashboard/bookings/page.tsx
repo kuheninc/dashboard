@@ -73,7 +73,7 @@ export default function BookingsPage() {
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            List View
+            Upcoming
           </button>
         </div>
 
