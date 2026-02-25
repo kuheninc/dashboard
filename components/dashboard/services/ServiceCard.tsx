@@ -27,7 +27,7 @@ export default function ServiceCard({ service }: { service: Doc<"services"> }) {
             <div className="flex items-center gap-1.5 shrink-0 ml-3">
               <button
                 onClick={() => setEditing(true)}
-                className="p-1.5 rounded-md opacity-0 group-hover:opacity-100 hover:bg-[rgba(166,139,107,0.08)] transition-all"
+                className="p-1.5 rounded-md opacity-40 hover:opacity-100 hover:bg-[rgba(166,139,107,0.08)] transition-all"
                 title="Edit service"
               >
                 <Pencil className="w-3.5 h-3.5 text-[#9c9184]" />

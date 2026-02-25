@@ -308,7 +308,7 @@ export default function WeeklyCalendarGrid({
           className="overflow-auto flex-1 relative"
         >
           {/* Sticky header group — sticks to top on vertical scroll */}
-          <div className="sticky top-0 z-20 bg-background">
+          <div className="sticky top-0 z-20 bg-background" style={{ minWidth: "max-content" }}>
             {/* Date row */}
             <div
               className="grid border-b border-border"
@@ -401,6 +401,7 @@ export default function WeeklyCalendarGrid({
             style={{
               gridTemplateColumns,
               minHeight: TOTAL_SLOTS * ROW_HEIGHT,
+              minWidth: "max-content",
             }}
           >
             {renderTimeGutter(true)}

@@ -39,7 +39,7 @@ export default function StylistCard({ stylist, stats }: StylistCardProps) {
                 <div className="flex items-center gap-1 shrink-0 ml-2">
                   <button
                     onClick={() => setEditing(true)}
-                    className="p-1.5 rounded-md opacity-0 group-hover:opacity-100 hover:bg-[rgba(166,139,107,0.08)] transition-all"
+                    className="p-1.5 rounded-md opacity-40 hover:opacity-100 hover:bg-[rgba(166,139,107,0.08)] transition-all"
                     title="Edit stylist"
                   >
                     <Pencil className="w-3.5 h-3.5 text-[#9c9184]" />
@@ -162,21 +162,21 @@ function StylistEditModal({ stylist, onClose }: { stylist: Doc<"stylists">; onCl
             {DAY_NAMES.map((dayName, i) => {
               const slot = availability.find((a) => a.day === i);
               return (
-                <div key={i} className="flex items-center gap-2">
+                <div key={i} className="flex flex-wrap items-center gap-2">
                   <button
                     type="button"
                     onClick={() => toggleDay(i)}
-                    className={`w-[80px] text-left text-[12px] font-medium px-2 py-1.5 rounded-md transition-colors ${
+                    className={`w-[80px] text-left text-[12px] font-medium px-2 py-1.5 rounded-md transition-colors shrink-0 ${
                       slot ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
                     }`}
                   >
                     {dayName.slice(0, 3)}
                   </button>
                   {slot && (
-                    <div className="flex items-center gap-1.5">
-                      <input type="time" value={slot.startTime} onChange={(e) => updateDayTime(i, "startTime", e.target.value)} className="bg-background border border-border rounded-md px-2 py-1 text-[12px] font-data text-foreground outline-none focus:ring-1 focus:ring-primary/30" />
-                      <span className="text-[11px] text-[#9c9184]">to</span>
-                      <input type="time" value={slot.endTime} onChange={(e) => updateDayTime(i, "endTime", e.target.value)} className="bg-background border border-border rounded-md px-2 py-1 text-[12px] font-data text-foreground outline-none focus:ring-1 focus:ring-primary/30" />
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <input type="time" value={slot.startTime} onChange={(e) => updateDayTime(i, "startTime", e.target.value)} className="bg-background border border-border rounded-md px-2 py-1 text-[12px] font-data text-foreground outline-none focus:ring-1 focus:ring-primary/30 min-w-0" />
+                      <span className="text-[11px] text-[#9c9184] shrink-0">to</span>
+                      <input type="time" value={slot.endTime} onChange={(e) => updateDayTime(i, "endTime", e.target.value)} className="bg-background border border-border rounded-md px-2 py-1 text-[12px] font-data text-foreground outline-none focus:ring-1 focus:ring-primary/30 min-w-0" />
                     </div>
                   )}
                 </div>

@@ -26,7 +26,7 @@ const pageTitles: Record<string, string> = {
   "/dashboard/services": "Services",
   "/dashboard/team": "Team",
   "/dashboard/analytics": "Analytics",
-  "/dashboard/settings": "Settings",
+  "/dashboard/settings": "Business Info",
 };
 
 export default function Header({ onMenuClick }: HeaderProps) {
