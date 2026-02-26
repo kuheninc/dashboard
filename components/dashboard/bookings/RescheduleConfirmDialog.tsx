@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
@@ -87,6 +87,15 @@ export default function RescheduleConfirmDialog({
   const durationChanged = newEndTime !== booking.endTime && newStartTime === booking.startTime;
 
   const selectedStylist = stylists.find((s) => s._id === selectedStylistId);
+
+  // Check if target is in the past
+  const isPastTarget = useMemo(() => {
+    const now = new Date();
+    const myt = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Kuala_Lumpur" }));
+    const todayStr = `${myt.getFullYear()}-${String(myt.getMonth() + 1).padStart(2, "0")}-${String(myt.getDate()).padStart(2, "0")}`;
+    const nowTime = `${String(myt.getHours()).padStart(2, "0")}:${String(myt.getMinutes()).padStart(2, "0")}`;
+    return newDate < todayStr || (newDate === todayStr && newStartTime <= nowTime);
+  }, [newDate, newStartTime]);
 
   // Check if outside salon hours
   const dayOfWeek = new Date(newDate + "T00:00:00").getDay();
@@ -262,6 +271,17 @@ export default function RescheduleConfirmDialog({
           </div>
 
           {/* Warnings */}
+          {isPastTarget && (
+            <div className="p-3 rounded-lg bg-[rgba(196,90,90,0.08)] border border-[rgba(196,90,90,0.2)]">
+              <div className="flex items-center gap-1.5">
+                <AlertTriangle className="w-3.5 h-3.5 text-[#c45a5a]" />
+                <p className="text-[12px] text-[#c45a5a] font-medium">
+                  Cannot reschedule to a past date or time
+                </p>
+              </div>
+            </div>
+          )}
+
           {conflicts && conflicts.length > 0 && (
             <div className="p-3 rounded-lg bg-[rgba(196,152,62,0.08)] border border-[rgba(196,152,62,0.2)]">
               <div className="flex items-center gap-1.5">
@@ -306,7 +326,7 @@ export default function RescheduleConfirmDialog({
           </button>
           <button
             onClick={handleConfirm}
-            disabled={submitting}
+            disabled={submitting || isPastTarget}
             className="px-4 py-2 rounded-lg text-[12px] font-medium bg-primary text-primary-foreground hover:opacity-90 transition-opacity disabled:opacity-50"
           >
             {submitting ? "Rescheduling..." : "Confirm Reschedule"}

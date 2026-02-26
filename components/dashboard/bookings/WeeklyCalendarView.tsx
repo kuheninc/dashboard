@@ -143,6 +143,13 @@ export default function WeeklyCalendarView() {
       const booking = enriched.find((b) => b._id === bookingId);
       if (!booking) return;
 
+      // Block dropping on past time slots
+      const now = new Date();
+      const myt = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Kuala_Lumpur" }));
+      const nowDateStr = `${myt.getFullYear()}-${String(myt.getMonth() + 1).padStart(2, "0")}-${String(myt.getDate()).padStart(2, "0")}`;
+      const nowTimeStr = `${String(myt.getHours()).padStart(2, "0")}:${String(myt.getMinutes()).padStart(2, "0")}`;
+      if (newDate < nowDateStr || (newDate === nowDateStr && newTime <= nowTimeStr)) return;
+
       // Calculate new end time preserving original duration
       const originalDuration =
         toMinutes(booking.endTime) - toMinutes(booking.startTime);

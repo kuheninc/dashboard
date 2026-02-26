@@ -193,6 +193,18 @@ export default function WeeklyCalendarGrid({
       ? days.length * activeStylistsSorted.length
       : days.length;
 
+  // Current MYT time for past-booking checks
+  const nowTimeMYT = useMemo(() => {
+    const now = new Date();
+    const myt = new Date(
+      now.toLocaleString("en-US", { timeZone: "Asia/Kuala_Lumpur" })
+    );
+    return `${String(myt.getHours()).padStart(2, "0")}:${String(myt.getMinutes()).padStart(2, "0")}`;
+  }, []);
+
+  const isBookingPast = (booking: EnrichedBooking, dateStr: string) =>
+    dateStr < todayStr || (dateStr === todayStr && booking.startTime <= nowTimeMYT);
+
   // Current time indicator
   const currentTimeTop = useMemo(() => {
     const now = new Date();
@@ -226,7 +238,7 @@ export default function WeeklyCalendarGrid({
       : `60px repeat(7, 1fr)`;
 
   const hours = Array.from(
-    { length: END_HOUR - START_HOUR },
+    { length: END_HOUR - START_HOUR + 1 },
     (_, i) => START_HOUR + i
   );
 
@@ -409,7 +421,6 @@ export default function WeeklyCalendarGrid({
             {days.flatMap((day, dayIndex) => {
               const dateStr = format(day, "yyyy-MM-dd");
               const dayBookings = getVisibleBookings(dateStr);
-              const isPast = dateStr < todayStr;
 
               return activeStylistsSorted.map((stylist, sIdx) => {
                 const stylistBookings = dayBookings.filter(
@@ -457,6 +468,7 @@ export default function WeeklyCalendarGrid({
                       const height =
                         ((endMin - startMin) / 15) *
                         ROW_HEIGHT;
+                      const bookingPast = isBookingPast(booking, dateStr);
 
                       return (
                         <BookingBlock
@@ -474,12 +486,12 @@ export default function WeeklyCalendarGrid({
                           left="0%"
                           width="98%"
                           isDraggable={
-                            !isPast &&
+                            !bookingPast &&
                             ACTIVE_STATUSES.includes(
                               booking.status
                             )
                           }
-                          isPast={isPast}
+                          isPast={bookingPast}
                           onClick={(e) => {
                             const rect = (
                               e.currentTarget as HTMLElement
@@ -490,7 +502,7 @@ export default function WeeklyCalendarGrid({
                             );
                           }}
                           onResize={
-                            !isPast
+                            !bookingPast
                               ? onBookingResize
                               : undefined
                           }
@@ -565,7 +577,6 @@ export default function WeeklyCalendarGrid({
           {days.map((day) => {
             const dateStr = format(day, "yyyy-MM-dd");
             const dayBookings = getVisibleBookings(dateStr);
-            const isPast = dateStr < todayStr;
             const layoutBlocks = layoutOverlapping(dayBookings);
 
             return (
@@ -597,6 +608,7 @@ export default function WeeklyCalendarGrid({
                       ((endMin - startMin) / 15) * ROW_HEIGHT;
                     const widthPct = 100 / totalColumns;
                     const leftPct = columnIndex * widthPct;
+                    const bookingPast = isBookingPast(booking, dateStr);
 
                     return (
                       <BookingBlock
@@ -611,10 +623,10 @@ export default function WeeklyCalendarGrid({
                         left={`${leftPct}%`}
                         width={`${widthPct - 1}%`}
                         isDraggable={
-                          !isPast &&
+                          !bookingPast &&
                           ACTIVE_STATUSES.includes(booking.status)
                         }
-                        isPast={isPast}
+                        isPast={bookingPast}
                         onClick={(e) => {
                           const rect = (
                             e.currentTarget as HTMLElement
@@ -622,7 +634,7 @@ export default function WeeklyCalendarGrid({
                           onBookingClick(booking, rect);
                         }}
                         onResize={
-                          !isPast ? onBookingResize : undefined
+                          !bookingPast ? onBookingResize : undefined
                         }
                         rowHeight={ROW_HEIGHT}
                       />

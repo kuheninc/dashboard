@@ -246,6 +246,21 @@ export const reschedule = mutation({
       throw new Error("Cannot reschedule a booking with status: " + booking.status);
     }
 
+    // Get current date/time in MYT
+    const nowMYT = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Kuala_Lumpur" }));
+    const todayStr = `${nowMYT.getFullYear()}-${String(nowMYT.getMonth() + 1).padStart(2, "0")}-${String(nowMYT.getDate()).padStart(2, "0")}`;
+    const currentTime = `${String(nowMYT.getHours()).padStart(2, "0")}:${String(nowMYT.getMinutes()).padStart(2, "0")}`;
+
+    // Prevent rescheduling past bookings
+    if (booking.date < todayStr || (booking.date === todayStr && booking.startTime <= currentTime)) {
+      throw new Error("Cannot reschedule a past booking");
+    }
+
+    // Prevent rescheduling to a past date/time
+    if (args.newDate < todayStr || (args.newDate === todayStr && args.newStartTime <= currentTime)) {
+      throw new Error("Cannot reschedule to a past date or time");
+    }
+
     // Cancel existing scheduled jobs
     if (booking.reminderScheduledId) {
       await ctx.scheduler.cancel(booking.reminderScheduledId);
