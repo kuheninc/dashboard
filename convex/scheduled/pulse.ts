@@ -2,9 +2,6 @@
 
 import { internalAction } from "../_generated/server";
 import { internal } from "../_generated/api";
-import Anthropic from "@anthropic-ai/sdk";
-
-const anthropic = new Anthropic();
 
 export const generateAndSend = internalAction({
   args: {},
@@ -40,28 +37,23 @@ export const generateAndSend = internalAction({
         (b) => !b.status.startsWith("cancelled") && b.status !== "no_show"
       ).length;
 
-      const response = await anthropic.messages.create({
-        model: "claude-sonnet-4-5-20250929",
-        max_tokens: 512,
-        messages: [
-          {
-            role: "user",
-            content: `Generate a brief WhatsApp-friendly weekly pulse for a hair salon admin. Use bullet points, keep it under 200 words.
+      const offendersList =
+        offenders.length > 0
+          ? offenders.map((o) => `  - ${o.name} (${o.noShowCount}x)`).join("\n")
+          : "  None";
 
-Data:
-- Last 7 days: ${completed} completed, ${noShows} no-shows, ${cancelled} cancelled
-- Next 7 days: ${upcoming} upcoming bookings
-- Repeat no-show customers: ${offenders.length > 0 ? offenders.map((o) => `${o.name} (${o.noShowCount}x)`).join(", ") : "None"}
-- Salon: ${salon.name}
-- Date: ${fmt(now)}`,
-          },
-        ],
-      });
+      const text = `Weekly Pulse for ${salon.name} (${fmt(now)})
 
-      const text =
-        response.content[0].type === "text"
-          ? response.content[0].text
-          : "Weekly summary unavailable.";
+Last 7 days:
+  Completed: ${completed}
+  No-shows: ${noShows}
+  Cancelled: ${cancelled}
+
+Next 7 days:
+  Upcoming bookings: ${upcoming}
+
+Repeat no-show customers:
+${offendersList}`;
 
       for (const adminPhone of salon.adminPhones) {
         await ctx.runAction(internal.whatsapp.send.sendTextMessage, {

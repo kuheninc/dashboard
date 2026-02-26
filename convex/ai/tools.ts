@@ -1,17 +1,23 @@
-import Anthropic from "@anthropic-ai/sdk";
+type GeminiFunctionDeclaration = {
+  name: string;
+  description: string;
+  parameters: {
+    type: "OBJECT";
+    properties: Record<string, unknown>;
+    required?: string[];
+  };
+};
 
-type Tool = Anthropic.Messages.Tool;
-
-export const customerTools: Tool[] = [
+export const customerTools: GeminiFunctionDeclaration[] = [
   {
     name: "lookup_customer",
     description:
       "Check if a customer exists in the database by their phone number. Use this when you need to verify if the sender is a registered customer.",
-    input_schema: {
-      type: "object" as const,
+    parameters: {
+      type: "OBJECT",
       properties: {
         phone: {
-          type: "string",
+          type: "STRING",
           description: "Customer phone number in E.164 format (e.g. 60123456789)",
         },
       },
@@ -22,12 +28,12 @@ export const customerTools: Tool[] = [
     name: "register_customer",
     description:
       "Register a new customer. Requires their name, email is optional. Phone is auto-filled from sender. Ask for name and email together in one message, then call this immediately — do not ask twice.",
-    input_schema: {
-      type: "object" as const,
+    parameters: {
+      type: "OBJECT",
       properties: {
-        name: { type: "string", description: "Customer's full name" },
-        phone: { type: "string", description: "Phone number in E.164 format" },
-        email: { type: "string", description: "Email address (optional)" },
+        name: { type: "STRING", description: "Customer's full name" },
+        phone: { type: "STRING", description: "Phone number in E.164 format" },
+        email: { type: "STRING", description: "Email address (optional)" },
       },
       required: ["name", "phone"],
     },
@@ -36,12 +42,12 @@ export const customerTools: Tool[] = [
     name: "check_availability",
     description:
       "Check available time slots for a specific service on a specific date. Returns available slots with stylist assignments. If a preferred stylist is specified, their slots are listed first.",
-    input_schema: {
-      type: "object" as const,
+    parameters: {
+      type: "OBJECT",
       properties: {
-        serviceId: { type: "string", description: "The Convex document ID for the service (e.g. 'k57...'). Use the exact _id from the services list, NOT the service name." },
-        date: { type: "string", description: "Date in YYYY-MM-DD format" },
-        preferredStylistId: { type: "string", description: "Optional stylist ID if customer has a preference. Preferred stylist's slots shown first." },
+        serviceId: { type: "STRING", description: "The Convex document ID for the service (e.g. 'k57...'). Use the exact _id from the services list, NOT the service name." },
+        date: { type: "STRING", description: "Date in YYYY-MM-DD format" },
+        preferredStylistId: { type: "STRING", description: "Optional stylist ID if customer has a preference. Preferred stylist's slots shown first." },
       },
       required: ["serviceId", "date"],
     },
@@ -50,15 +56,15 @@ export const customerTools: Tool[] = [
     name: "create_booking",
     description:
       "Create a new booking. Status will be pending_approval (needs admin confirmation). Returns endTime for multi-service chaining.",
-    input_schema: {
-      type: "object" as const,
+    parameters: {
+      type: "OBJECT",
       properties: {
-        customerId: { type: "string", description: "Customer ID" },
-        stylistId: { type: "string", description: "Stylist ID (from availability check)" },
-        serviceId: { type: "string", description: "Service ID" },
-        date: { type: "string", description: "Date in YYYY-MM-DD format" },
-        startTime: { type: "string", description: "Start time in HH:MM format" },
-        preferredStylistId: { type: "string", description: "Optional: stylist the customer prefers. Stored as a request for admin to review." },
+        customerId: { type: "STRING", description: "Customer ID" },
+        stylistId: { type: "STRING", description: "Stylist ID (from availability check)" },
+        serviceId: { type: "STRING", description: "Service ID" },
+        date: { type: "STRING", description: "Date in YYYY-MM-DD format" },
+        startTime: { type: "STRING", description: "Start time in HH:MM format" },
+        preferredStylistId: { type: "STRING", description: "Optional: stylist the customer prefers. Stored as a request for admin to review." },
       },
       required: ["customerId", "stylistId", "serviceId", "date", "startTime"],
     },
@@ -66,10 +72,10 @@ export const customerTools: Tool[] = [
   {
     name: "get_my_bookings",
     description: "Get all upcoming bookings for a customer.",
-    input_schema: {
-      type: "object" as const,
+    parameters: {
+      type: "OBJECT",
       properties: {
-        customerId: { type: "string", description: "Customer ID" },
+        customerId: { type: "STRING", description: "Customer ID" },
       },
       required: ["customerId"],
     },
@@ -77,11 +83,11 @@ export const customerTools: Tool[] = [
   {
     name: "cancel_booking",
     description: "Cancel a booking.",
-    input_schema: {
-      type: "object" as const,
+    parameters: {
+      type: "OBJECT",
       properties: {
-        bookingId: { type: "string", description: "Booking ID to cancel" },
-        reason: { type: "string", description: "Reason for cancellation" },
+        bookingId: { type: "STRING", description: "Booking ID to cancel" },
+        reason: { type: "STRING", description: "Reason for cancellation" },
       },
       required: ["bookingId"],
     },
@@ -90,10 +96,10 @@ export const customerTools: Tool[] = [
     name: "confirm_attendance",
     description:
       "Customer confirms they will attend after receiving the 1-hour reminder.",
-    input_schema: {
-      type: "object" as const,
+    parameters: {
+      type: "OBJECT",
       properties: {
-        bookingId: { type: "string", description: "Booking ID" },
+        bookingId: { type: "STRING", description: "Booking ID" },
       },
       required: ["bookingId"],
     },
@@ -102,48 +108,45 @@ export const customerTools: Tool[] = [
     name: "send_location",
     description:
       "Send the salon's location to the customer. Use when customer asks for directions, address, or how to get to the salon.",
-    input_schema: {
-      type: "object" as const,
+    parameters: {
+      type: "OBJECT",
       properties: {},
-      required: [],
     },
   },
 ];
 
-export const adminTools: Tool[] = [
+export const adminTools: GeminiFunctionDeclaration[] = [
   {
     name: "count_bookings",
     description: "Count bookings for a specific date or date range.",
-    input_schema: {
-      type: "object" as const,
+    parameters: {
+      type: "OBJECT",
       properties: {
-        date: { type: "string", description: "Specific date YYYY-MM-DD (use this OR startDate+endDate)" },
-        startDate: { type: "string", description: "Range start date YYYY-MM-DD" },
-        endDate: { type: "string", description: "Range end date YYYY-MM-DD" },
+        date: { type: "STRING", description: "Specific date YYYY-MM-DD (use this OR startDate+endDate)" },
+        startDate: { type: "STRING", description: "Range start date YYYY-MM-DD" },
+        endDate: { type: "STRING", description: "Range end date YYYY-MM-DD" },
       },
-      required: [],
     },
   },
   {
     name: "list_bookings",
     description: "List bookings with full details for a date or date range.",
-    input_schema: {
-      type: "object" as const,
+    parameters: {
+      type: "OBJECT",
       properties: {
-        date: { type: "string", description: "Specific date YYYY-MM-DD" },
-        startDate: { type: "string", description: "Range start YYYY-MM-DD" },
-        endDate: { type: "string", description: "Range end YYYY-MM-DD" },
+        date: { type: "STRING", description: "Specific date YYYY-MM-DD" },
+        startDate: { type: "STRING", description: "Range start YYYY-MM-DD" },
+        endDate: { type: "STRING", description: "Range end YYYY-MM-DD" },
       },
-      required: [],
     },
   },
   {
     name: "approve_booking",
     description: "Approve a pending booking.",
-    input_schema: {
-      type: "object" as const,
+    parameters: {
+      type: "OBJECT",
       properties: {
-        bookingId: { type: "string", description: "Booking ID to approve" },
+        bookingId: { type: "STRING", description: "Booking ID to approve" },
       },
       required: ["bookingId"],
     },
@@ -151,14 +154,14 @@ export const adminTools: Tool[] = [
   {
     name: "admin_create_booking",
     description: "Create a booking directly (auto-confirmed, no approval needed).",
-    input_schema: {
-      type: "object" as const,
+    parameters: {
+      type: "OBJECT",
       properties: {
-        customerPhone: { type: "string", description: "Customer phone number" },
-        stylistId: { type: "string", description: "Stylist ID" },
-        serviceId: { type: "string", description: "Service ID" },
-        date: { type: "string", description: "Date YYYY-MM-DD" },
-        startTime: { type: "string", description: "Start time HH:MM" },
+        customerPhone: { type: "STRING", description: "Customer phone number" },
+        stylistId: { type: "STRING", description: "Stylist ID" },
+        serviceId: { type: "STRING", description: "Service ID" },
+        date: { type: "STRING", description: "Date YYYY-MM-DD" },
+        startTime: { type: "STRING", description: "Start time HH:MM" },
       },
       required: ["customerPhone", "stylistId", "serviceId", "date", "startTime"],
     },
@@ -166,11 +169,11 @@ export const adminTools: Tool[] = [
   {
     name: "admin_cancel_booking",
     description: "Cancel any booking as admin.",
-    input_schema: {
-      type: "object" as const,
+    parameters: {
+      type: "OBJECT",
       properties: {
-        bookingId: { type: "string", description: "Booking ID" },
-        reason: { type: "string", description: "Cancellation reason" },
+        bookingId: { type: "STRING", description: "Booking ID" },
+        reason: { type: "STRING", description: "Cancellation reason" },
       },
       required: ["bookingId"],
     },
@@ -178,13 +181,13 @@ export const adminTools: Tool[] = [
   {
     name: "add_service",
     description: "Add a new service to the salon.",
-    input_schema: {
-      type: "object" as const,
+    parameters: {
+      type: "OBJECT",
       properties: {
-        name: { type: "string", description: "Service name in English" },
-        nameBM: { type: "string", description: "Service name in Bahasa Malaysia (optional)" },
-        durationMinutes: { type: "number", description: "Duration in minutes" },
-        priceRM: { type: "number", description: "Price in RM" },
+        name: { type: "STRING", description: "Service name in English" },
+        nameBM: { type: "STRING", description: "Service name in Bahasa Malaysia (optional)" },
+        durationMinutes: { type: "NUMBER", description: "Duration in minutes" },
+        priceRM: { type: "NUMBER", description: "Price in RM" },
       },
       required: ["name", "durationMinutes", "priceRM"],
     },
@@ -192,14 +195,14 @@ export const adminTools: Tool[] = [
   {
     name: "update_service",
     description: "Update an existing service's details.",
-    input_schema: {
-      type: "object" as const,
+    parameters: {
+      type: "OBJECT",
       properties: {
-        serviceId: { type: "string", description: "Service ID" },
-        name: { type: "string", description: "New name (optional)" },
-        nameBM: { type: "string", description: "New BM name (optional)" },
-        durationMinutes: { type: "number", description: "New duration (optional)" },
-        priceRM: { type: "number", description: "New price (optional)" },
+        serviceId: { type: "STRING", description: "Service ID" },
+        name: { type: "STRING", description: "New name (optional)" },
+        nameBM: { type: "STRING", description: "New BM name (optional)" },
+        durationMinutes: { type: "NUMBER", description: "New duration (optional)" },
+        priceRM: { type: "NUMBER", description: "New price (optional)" },
       },
       required: ["serviceId"],
     },
@@ -207,10 +210,10 @@ export const adminTools: Tool[] = [
   {
     name: "remove_service",
     description: "Deactivate a service (soft delete).",
-    input_schema: {
-      type: "object" as const,
+    parameters: {
+      type: "OBJECT",
       properties: {
-        serviceId: { type: "string", description: "Service ID" },
+        serviceId: { type: "STRING", description: "Service ID" },
       },
       required: ["serviceId"],
     },
@@ -218,18 +221,18 @@ export const adminTools: Tool[] = [
   {
     name: "update_hours",
     description: "Update salon opening hours.",
-    input_schema: {
-      type: "object" as const,
+    parameters: {
+      type: "OBJECT",
       properties: {
         openingHours: {
-          type: "array",
+          type: "ARRAY",
           items: {
-            type: "object",
+            type: "OBJECT",
             properties: {
-              day: { type: "number", description: "0=Sunday..6=Saturday" },
-              open: { type: "string", description: "Opening time HH:MM" },
-              close: { type: "string", description: "Closing time HH:MM" },
-              isClosed: { type: "boolean" },
+              day: { type: "NUMBER", description: "0=Sunday..6=Saturday" },
+              open: { type: "STRING", description: "Opening time HH:MM" },
+              close: { type: "STRING", description: "Closing time HH:MM" },
+              isClosed: { type: "BOOLEAN" },
             },
             required: ["day", "open", "close", "isClosed"],
           },
@@ -242,12 +245,12 @@ export const adminTools: Tool[] = [
   {
     name: "update_closed_dates",
     description: "Update the list of closed dates.",
-    input_schema: {
-      type: "object" as const,
+    parameters: {
+      type: "OBJECT",
       properties: {
         closedDates: {
-          type: "array",
-          items: { type: "string" },
+          type: "ARRAY",
+          items: { type: "STRING" },
           description: "Array of dates in YYYY-MM-DD format",
         },
       },
@@ -257,30 +260,28 @@ export const adminTools: Tool[] = [
   {
     name: "get_no_show_report",
     description: "Get customers with repeated no-shows.",
-    input_schema: {
-      type: "object" as const,
+    parameters: {
+      type: "OBJECT",
       properties: {
-        threshold: { type: "number", description: "Minimum no-show count (default 3)" },
+        threshold: { type: "NUMBER", description: "Minimum no-show count (default 3)" },
       },
-      required: [],
     },
   },
   {
     name: "get_pending_bookings",
     description: "Get all bookings awaiting admin approval.",
-    input_schema: {
-      type: "object" as const,
+    parameters: {
+      type: "OBJECT",
       properties: {},
-      required: [],
     },
   },
   {
     name: "mark_no_show",
     description: "Mark a booking as no-show. Increments customer's no-show count.",
-    input_schema: {
-      type: "object" as const,
+    parameters: {
+      type: "OBJECT",
       properties: {
-        bookingId: { type: "string", description: "Booking ID" },
+        bookingId: { type: "STRING", description: "Booking ID" },
       },
       required: ["bookingId"],
     },
@@ -288,10 +289,10 @@ export const adminTools: Tool[] = [
   {
     name: "mark_completed",
     description: "Mark a booking as completed (customer arrived and was served).",
-    input_schema: {
-      type: "object" as const,
+    parameters: {
+      type: "OBJECT",
       properties: {
-        bookingId: { type: "string", description: "Booking ID" },
+        bookingId: { type: "STRING", description: "Booking ID" },
       },
       required: ["bookingId"],
     },
@@ -300,11 +301,11 @@ export const adminTools: Tool[] = [
     name: "reject_booking",
     description:
       "Reject a pending booking. Automatically offers the customer alternative time slots close to their original request. Use this instead of admin_cancel_booking for pending bookings.",
-    input_schema: {
-      type: "object" as const,
+    parameters: {
+      type: "OBJECT",
       properties: {
-        bookingId: { type: "string", description: "Booking ID to reject" },
-        reason: { type: "string", description: "Reason for rejection (e.g. 'stylist unavailable', 'slot conflict')" },
+        bookingId: { type: "STRING", description: "Booking ID to reject" },
+        reason: { type: "STRING", description: "Reason for rejection (e.g. 'stylist unavailable', 'slot conflict')" },
       },
       required: ["bookingId"],
     },

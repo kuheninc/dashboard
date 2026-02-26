@@ -3,12 +3,18 @@
 import { internalAction } from "../_generated/server";
 import { api, internal } from "../_generated/api";
 import { v } from "convex/values";
-import Anthropic from "@anthropic-ai/sdk";
+import { GoogleGenAI, type FunctionDeclaration } from "@google/genai";
 import { buildCustomerSystemPrompt, buildAdminSystemPrompt } from "./prompts";
 import { customerTools, adminTools } from "./tools";
 import { Id } from "../_generated/dataModel";
 
-const anthropic = new Anthropic();
+let _ai: GoogleGenAI | null = null;
+function getAI() {
+  if (!_ai) {
+    _ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
+  }
+  return _ai;
+}
 
 export const handleMessage = internalAction({
   args: {
@@ -92,7 +98,7 @@ export const handleMessage = internalAction({
     // 5. Load context
     const staleThreshold = Date.now() - 24 * 60 * 60 * 1000;
     const messageLimit =
-      conversation && conversation.lastMessageAt < staleThreshold ? 5 : 20;
+      conversation && conversation.lastMessageAt < staleThreshold ? 3 : 10;
 
     const recentMessages = await ctx.runQuery(
       internal.messages.internal.getRecent,
@@ -108,7 +114,7 @@ export const handleMessage = internalAction({
 
     // 6. Build system prompt and messages
     let systemPrompt: string;
-    let tools: Anthropic.Messages.Tool[];
+    let tools: typeof customerTools;
 
     if (isAdmin) {
       systemPrompt = buildAdminSystemPrompt(
@@ -157,69 +163,81 @@ export const handleMessage = internalAction({
       tools = customerTools;
     }
 
-    // Build Claude messages from history
-    const claudeMessages: Anthropic.Messages.MessageParam[] = recentMessages.map(
-      (m) => ({
-        role: m.role === "user" ? ("user" as const) : ("assistant" as const),
-        content: m.content,
-      })
-    );
+    // Build Gemini messages from history
+    const geminiMessages: { role: "user" | "model"; parts: Record<string, unknown>[] }[] =
+      recentMessages.map((m) => ({
+        role: m.role === "user" ? "user" as const : "model" as const,
+        parts: [{ text: m.content }],
+      }));
 
-    // 7. Call Claude with tool loop
-    let response = await anthropic.messages.create({
-      model: "claude-sonnet-4-5-20250929",
-      max_tokens: 1024,
-      system: systemPrompt,
-      tools,
-      messages: claudeMessages,
+    // 7. Call Gemini with tool loop
+    let response = await getAI().models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: geminiMessages,
+      config: {
+        systemInstruction: systemPrompt,
+        temperature: 0.7,
+        tools: [{ functionDeclarations: tools as unknown as FunctionDeclaration[] }],
+      },
     });
 
     // Process tool calls in a loop (max 5 iterations to prevent runaway)
     let iterations = 0;
-    while (response.stop_reason === "tool_use" && iterations < 5) {
+    let parts = response.candidates?.[0]?.content?.parts ?? [];
+    let functionCalls = parts.filter(
+      (p) => (p as { functionCall?: unknown }).functionCall
+    );
+
+    while (functionCalls.length > 0 && iterations < 5) {
       iterations++;
 
-      const toolUseBlocks = response.content.filter(
-        (block): block is Anthropic.Messages.ToolUseBlock =>
-          block.type === "tool_use"
-      );
+      const functionResponses: Record<string, unknown>[] = [];
 
-      const toolResults: Anthropic.Messages.ToolResultBlockParam[] = [];
-
-      for (const toolUse of toolUseBlocks) {
+      for (const part of functionCalls) {
+        const fc = (part as { functionCall: { name: string; args: Record<string, unknown> } }).functionCall;
         const result = await executeTool(
           ctx,
           salon._id,
           args.senderPhone,
           role,
-          toolUse.name,
-          toolUse.input as Record<string, unknown>
+          fc.name,
+          fc.args ?? {}
         );
-        toolResults.push({
-          type: "tool_result",
-          tool_use_id: toolUse.id,
-          content: JSON.stringify(result),
+        functionResponses.push({
+          functionResponse: {
+            name: fc.name,
+            response: result as object,
+          },
         });
       }
 
       // Continue conversation with tool results
-      claudeMessages.push({ role: "assistant", content: response.content });
-      claudeMessages.push({ role: "user", content: toolResults });
+      geminiMessages.push({ role: "model", parts: parts as Record<string, unknown>[] });
+      geminiMessages.push({ role: "user", parts: functionResponses });
 
-      response = await anthropic.messages.create({
-        model: "claude-sonnet-4-5-20250929",
-        max_tokens: 1024,
-        system: systemPrompt,
-        tools,
-        messages: claudeMessages,
+      response = await getAI().models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: geminiMessages,
+        config: {
+          systemInstruction: systemPrompt,
+          temperature: 0.7,
+          tools: [{ functionDeclarations: tools as unknown as FunctionDeclaration[] }],
+        },
       });
+
+      parts = response.candidates?.[0]?.content?.parts ?? [];
+      functionCalls = parts.filter(
+        (p) => (p as { functionCall?: unknown }).functionCall
+      );
     }
 
     // 8. Extract final text response
-    const textBlocks = response.content.filter(
-      (block): block is Anthropic.Messages.TextBlock => block.type === "text"
-    );
-    const replyText = textBlocks.map((b) => b.text).join("\n") || "Sorry, I couldn't process that. Please try again.";
+    const responseParts = response.candidates?.[0]?.content?.parts ?? [];
+    const replyText =
+      responseParts
+        .filter((p) => (p as { text?: string }).text)
+        .map((p) => (p as { text: string }).text)
+        .join("\n") || "Sorry, I couldn't process that. Please try again.";
 
     // 9. Store assistant response
     await ctx.runMutation(internal.messages.internal.store, {

@@ -41,7 +41,6 @@ LANGUAGE RULES:
 - Detect the customer's language from their message.
 - If they write in Bahasa Malaysia, reply in BM.
 - If they write in English, reply in English.
-- If they write in Manglish (mixed BM/English with slang like "can ah", "got meh", "alamak"), match their casual tone naturally.
 - Default to English if ambiguous.
 - Keep messages concise — this is WhatsApp, not email. Short paragraphs, max 2-3 sentences per message.
 
