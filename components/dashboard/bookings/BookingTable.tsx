@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useMemo, useRef, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { useQuery, useMutation, useAction } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
@@ -94,7 +95,9 @@ function ActionsDropdown({
 }) {
   const [open, setOpen] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const ref = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState<{ top: number; right: number } | null>(null);
   const { salon } = useDashboard();
 
   const approveMut = useMutation(api.bookings.mutations.approve);
@@ -104,14 +107,30 @@ function ActionsDropdown({
   const markNoShowMut = useMutation(api.bookings.mutations.markNoShow);
   const requestFeedbackAction = useAction(api.bookings.actions.requestFeedback);
 
+  const updatePos = useCallback(() => {
+    if (!buttonRef.current) return;
+    const rect = buttonRef.current.getBoundingClientRect();
+    setPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
+  }, []);
+
   useEffect(() => {
     if (!open) return;
+    updatePos();
     function handleClick(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      if (
+        buttonRef.current?.contains(e.target as Node) ||
+        dropdownRef.current?.contains(e.target as Node)
+      ) return;
+      setOpen(false);
     }
+    function handleScroll() { setOpen(false); }
     document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, [open]);
+    window.addEventListener("scroll", handleScroll, true);
+    return () => {
+      document.removeEventListener("mousedown", handleClick);
+      window.removeEventListener("scroll", handleScroll, true);
+    };
+  }, [open, updatePos]);
 
   // Terminal statuses with no actions (except completed which can have feedback)
   if (TERMINAL_STATUSES.includes(status) && status !== "completed") return null;
@@ -178,40 +197,55 @@ function ActionsDropdown({
     });
   }
 
+  const dropdown = open && pos && !errorMsg ? createPortal(
+    <div
+      ref={dropdownRef}
+      className="fixed z-50 bg-card border border-border rounded-lg shadow-lg py-1 min-w-[160px]"
+      style={{ top: pos.top, right: pos.right }}
+    >
+      {actions.map((action) => (
+        <button
+          key={action.label}
+          onClick={() => {
+            if (!action.disabled) {
+              action.onClick();
+              setOpen(false);
+            }
+          }}
+          disabled={action.disabled}
+          className={`w-full flex items-center gap-2 px-3 py-2 text-[12px] font-medium transition-colors ${action.disabled ? "opacity-50 cursor-default" : "hover:bg-[rgba(166,139,107,0.06)]"}`}
+          style={{ color: action.color }}
+        >
+          {action.icon}
+          {action.label}
+        </button>
+      ))}
+    </div>,
+    document.body,
+  ) : null;
+
+  const errorPopup = errorMsg ? createPortal(
+    <div
+      ref={dropdownRef}
+      className="fixed z-50 bg-card border rounded-lg shadow-lg px-3 py-2 min-w-[200px] max-w-[280px] text-[11px] text-[#c45a5a]"
+      style={{ top: pos?.top ?? 0, right: pos?.right ?? 0, borderColor: "rgba(196,90,90,0.2)", backgroundColor: "rgba(196,90,90,0.05)" }}
+    >
+      {errorMsg}
+    </div>,
+    document.body,
+  ) : null;
+
   return (
-    <div ref={ref} className="relative">
+    <div>
       <button
+        ref={buttonRef}
         onClick={() => setOpen(!open)}
         className="p-1.5 rounded-md hover:bg-[rgba(166,139,107,0.08)] transition-colors"
       >
         <MoreHorizontal className="w-4 h-4 text-[#9c9184]" />
       </button>
-      {errorMsg && (
-        <div className="absolute right-0 top-full mt-1 z-20 bg-card border rounded-lg shadow-lg px-3 py-2 min-w-[200px] max-w-[280px] text-[11px] text-[#c45a5a]" style={{ borderColor: "rgba(196,90,90,0.2)", backgroundColor: "rgba(196,90,90,0.05)" }}>
-          {errorMsg}
-        </div>
-      )}
-      {open && !errorMsg && (
-        <div className="absolute right-0 top-full mt-1 z-20 bg-card border border-border rounded-lg shadow-lg py-1 min-w-[160px]">
-          {actions.map((action) => (
-            <button
-              key={action.label}
-              onClick={() => {
-                if (!action.disabled) {
-                  action.onClick();
-                  setOpen(false);
-                }
-              }}
-              disabled={action.disabled}
-              className={`w-full flex items-center gap-2 px-3 py-2 text-[12px] font-medium transition-colors ${action.disabled ? "opacity-50 cursor-default" : "hover:bg-[rgba(166,139,107,0.06)]"}`}
-              style={{ color: action.color }}
-            >
-              {action.icon}
-              {action.label}
-            </button>
-          ))}
-        </div>
-      )}
+      {dropdown}
+      {errorPopup}
     </div>
   );
 }

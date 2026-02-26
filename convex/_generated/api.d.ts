@@ -47,6 +47,7 @@ import type * as scheduled_pulse from "../scheduled/pulse.js";
 import type * as scheduled_reminders from "../scheduled/reminders.js";
 import type * as scheduled_statusCheck from "../scheduled/statusCheck.js";
 import type * as seed from "../seed.js";
+import type * as seedSecondSalon from "../seedSecondSalon.js";
 import type * as services_internal from "../services/internal.js";
 import type * as services_mutations from "../services/mutations.js";
 import type * as services_queries from "../services/queries.js";
@@ -102,6 +103,7 @@ declare const fullApi: ApiFromModules<{
   "scheduled/reminders": typeof scheduled_reminders;
   "scheduled/statusCheck": typeof scheduled_statusCheck;
   seed: typeof seed;
+  seedSecondSalon: typeof seedSecondSalon;
   "services/internal": typeof services_internal;
   "services/mutations": typeof services_mutations;
   "services/queries": typeof services_queries;
