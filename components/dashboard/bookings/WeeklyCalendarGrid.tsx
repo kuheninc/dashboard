@@ -36,11 +36,8 @@ export function getStylistColor(
 }
 
 const ACTIVE_STATUSES = [
-  "pending_approval",
+  "pending",
   "confirmed",
-  "reminder_sent",
-  "customer_confirmed",
-  "reschedule_pending",
 ];
 
 function toMinutes(time: string): number {

@@ -172,10 +172,10 @@ export const seed = internalMutation({
       // Today (2026-02-23)
       { customerId: "c1", stylistId: "st1", serviceId: "svc1", date: "2026-02-23", startTime: "10:00", endTime: "10:45", status: "confirmed" as const, createdBy: "customer" as const },
       { customerId: "c2", stylistId: "st2", serviceId: "svc2", date: "2026-02-23", startTime: "11:00", endTime: "13:00", status: "confirmed" as const, createdBy: "customer" as const },
-      { customerId: "c4", stylistId: "st1", serviceId: "svc3", date: "2026-02-23", startTime: "11:00", endTime: "12:00", status: "customer_confirmed" as const, createdBy: "customer" as const },
+      { customerId: "c4", stylistId: "st1", serviceId: "svc3", date: "2026-02-23", startTime: "11:00", endTime: "12:00", status: "confirmed" as const, createdBy: "customer" as const },
       { customerId: "c7", stylistId: "st3", serviceId: "svc1", date: "2026-02-23", startTime: "14:00", endTime: "14:45", status: "confirmed" as const, createdBy: "admin" as const },
-      { customerId: "c10", stylistId: "st4", serviceId: "svc4", date: "2026-02-23", startTime: "14:30", endTime: "15:00", status: "pending_approval" as const, createdBy: "customer" as const },
-      { customerId: "c6", stylistId: "st2", serviceId: "svc1", date: "2026-02-23", startTime: "15:00", endTime: "15:45", status: "pending_approval" as const, createdBy: "customer" as const },
+      { customerId: "c10", stylistId: "st4", serviceId: "svc4", date: "2026-02-23", startTime: "14:30", endTime: "15:00", status: "pending" as const, createdBy: "customer" as const },
+      { customerId: "c6", stylistId: "st2", serviceId: "svc1", date: "2026-02-23", startTime: "15:00", endTime: "15:45", status: "pending" as const, createdBy: "customer" as const },
       { customerId: "c12", stylistId: "st1", serviceId: "svc5", date: "2026-02-23", startTime: "15:00", endTime: "18:00", status: "confirmed" as const, createdBy: "customer" as const },
       // Yesterday
       { customerId: "c5", stylistId: "st2", serviceId: "svc1", date: "2026-02-22", startTime: "10:00", endTime: "10:45", status: "completed" as const, createdBy: "customer" as const },
@@ -185,7 +185,7 @@ export const seed = internalMutation({
       // Tomorrow
       { customerId: "c11", stylistId: "st1", serviceId: "svc1", date: "2026-02-24", startTime: "10:00", endTime: "10:45", status: "confirmed" as const, createdBy: "customer" as const },
       { customerId: "c15", stylistId: "st2", serviceId: "svc3", date: "2026-02-24", startTime: "11:00", endTime: "12:00", status: "confirmed" as const, createdBy: "customer" as const },
-      { customerId: "c4", stylistId: "st3", serviceId: "svc5", date: "2026-02-24", startTime: "13:00", endTime: "16:00", status: "pending_approval" as const, createdBy: "customer" as const },
+      { customerId: "c4", stylistId: "st3", serviceId: "svc5", date: "2026-02-24", startTime: "13:00", endTime: "16:00", status: "pending" as const, createdBy: "customer" as const },
       // This week
       { customerId: "c7", stylistId: "st1", serviceId: "svc2", date: "2026-02-25", startTime: "10:00", endTime: "12:00", status: "confirmed" as const, createdBy: "customer" as const },
       { customerId: "c2", stylistId: "st4", serviceId: "svc1", date: "2026-02-25", startTime: "14:00", endTime: "14:45", status: "confirmed" as const, createdBy: "customer" as const },
@@ -196,11 +196,11 @@ export const seed = internalMutation({
       { customerId: "c12", stylistId: "st2", serviceId: "svc2", date: "2026-02-20", startTime: "11:00", endTime: "13:00", status: "completed" as const, createdBy: "admin" as const },
       { customerId: "c4", stylistId: "st4", serviceId: "svc1", date: "2026-02-20", startTime: "15:00", endTime: "15:45", status: "completed" as const, createdBy: "customer" as const },
       { customerId: "c6", stylistId: "st1", serviceId: "svc4", date: "2026-02-19", startTime: "10:00", endTime: "10:30", status: "completed" as const, createdBy: "customer" as const },
-      { customerId: "c5", stylistId: "st3", serviceId: "svc5", date: "2026-02-19", startTime: "13:00", endTime: "16:00", status: "cancelled_customer" as const, createdBy: "customer" as const },
+      { customerId: "c5", stylistId: "st3", serviceId: "svc5", date: "2026-02-19", startTime: "13:00", endTime: "16:00", status: "cancelled" as const, createdBy: "customer" as const },
       { customerId: "c1", stylistId: "st2", serviceId: "svc1", date: "2026-02-18", startTime: "11:00", endTime: "11:45", status: "completed" as const, createdBy: "customer" as const },
       { customerId: "c14", stylistId: "st1", serviceId: "svc3", date: "2026-02-18", startTime: "14:00", endTime: "15:00", status: "completed" as const, createdBy: "customer" as const },
       { customerId: "c7", stylistId: "st4", serviceId: "svc1", date: "2026-02-17", startTime: "10:00", endTime: "10:45", status: "completed" as const, createdBy: "admin" as const },
-      { customerId: "c2", stylistId: "st2", serviceId: "svc2", date: "2026-02-17", startTime: "13:00", endTime: "15:00", status: "cancelled_admin" as const, createdBy: "customer" as const },
+      { customerId: "c2", stylistId: "st2", serviceId: "svc2", date: "2026-02-17", startTime: "13:00", endTime: "15:00", status: "cancelled" as const, createdBy: "customer" as const },
       { customerId: "c11", stylistId: "st3", serviceId: "svc4", date: "2026-02-16", startTime: "15:00", endTime: "15:30", status: "completed" as const, createdBy: "customer" as const },
       { customerId: "c9", stylistId: "st1", serviceId: "svc1", date: "2026-02-16", startTime: "10:00", endTime: "10:45", status: "completed" as const, createdBy: "customer" as const },
       { customerId: "c15", stylistId: "st4", serviceId: "svc3", date: "2026-02-15", startTime: "11:00", endTime: "12:00", status: "completed" as const, createdBy: "customer" as const },

@@ -46,12 +46,7 @@ export const updateState = internalMutation({
       v.literal("idle"),
       v.literal("collecting_info"),
       v.literal("booking_flow"),
-      v.literal("reschedule_flow"),
-      v.literal("cancel_flow"),
-      v.literal("awaiting_reminder_response"),
-      v.literal("awaiting_checkin_response"),
-      v.literal("admin_updating"),
-      v.literal("awaiting_reschedule_response")
+      v.literal("awaiting_reminder_response")
     ),
     flowData: v.optional(v.any()),
   },
@@ -72,5 +67,47 @@ export const resetToIdle = internalMutation({
       flowData: undefined,
       lastMessageAt: Date.now(),
     });
+  },
+});
+
+const LOCK_STALE_MS = 2 * 60 * 1000; // 2 minutes
+
+export const acquireProcessingLock = internalMutation({
+  args: { conversationId: v.id("conversations") },
+  handler: async (ctx, args) => {
+    const conv = await ctx.db.get(args.conversationId);
+    if (!conv) return { acquired: false, startedAt: 0 };
+
+    // If already processing and lock is fresh, skip
+    if (
+      conv.isProcessing &&
+      conv.processingStartedAt &&
+      Date.now() - conv.processingStartedAt < LOCK_STALE_MS
+    ) {
+      return { acquired: false, startedAt: 0 };
+    }
+
+    const startedAt = Date.now();
+    await ctx.db.patch(args.conversationId, {
+      isProcessing: true,
+      processingStartedAt: startedAt,
+    });
+    return { acquired: true, startedAt };
+  },
+});
+
+export const releaseProcessingLock = internalMutation({
+  args: { conversationId: v.id("conversations"), startedAt: v.number() },
+  handler: async (ctx, args) => {
+    const conv = await ctx.db.get(args.conversationId);
+    if (!conv) return { hasNewMessages: false };
+
+    await ctx.db.patch(args.conversationId, {
+      isProcessing: false,
+      processingStartedAt: undefined,
+    });
+
+    // Check if new messages arrived while we were processing
+    return { hasNewMessages: conv.lastMessageAt > args.startedAt };
   },
 });

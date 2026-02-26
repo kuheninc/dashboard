@@ -30,7 +30,6 @@ import WeeklyCalendarToolbar from "./WeeklyCalendarToolbar";
 import WeeklyCalendarGrid, { getStylistColor } from "./WeeklyCalendarGrid";
 import BookingBlock from "./BookingBlock";
 import BookingPopover from "./BookingPopover";
-import RescheduleConfirmDialog from "./RescheduleConfirmDialog";
 
 function toMinutes(time: string): number {
   const [h, m] = time.split(":").map(Number);
@@ -61,14 +60,6 @@ export default function WeeklyCalendarView() {
   const [popover, setPopover] = useState<{
     booking: EnrichedBooking;
     rect: DOMRect;
-  } | null>(null);
-
-  // Reschedule dialog state
-  const [rescheduleDialog, setRescheduleDialog] = useState<{
-    booking: EnrichedBooking;
-    newDate: string;
-    newStartTime: string;
-    newEndTime: string;
   } | null>(null);
 
   const weekEnd = useMemo(
@@ -125,50 +116,10 @@ export default function WeeklyCalendarView() {
   );
 
   const handleDragEnd = useCallback(
-    (event: DragEndEvent) => {
+    (_event: DragEndEvent) => {
       setActiveDragBooking(null);
-
-      const { active, over } = event;
-      if (!over) return;
-
-      const bookingId = active.id as string;
-      const dropId = over.id as string;
-
-      // Parse drop target: "drop_{date}_{time}"
-      const parts = dropId.split("_");
-      if (parts.length < 3 || parts[0] !== "drop") return;
-      const newDate = parts[1];
-      const newTime = parts[2];
-
-      const booking = enriched.find((b) => b._id === bookingId);
-      if (!booking) return;
-
-      // Block dropping on past time slots
-      const now = new Date();
-      const myt = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Kuala_Lumpur" }));
-      const nowDateStr = `${myt.getFullYear()}-${String(myt.getMonth() + 1).padStart(2, "0")}-${String(myt.getDate()).padStart(2, "0")}`;
-      const nowTimeStr = `${String(myt.getHours()).padStart(2, "0")}:${String(myt.getMinutes()).padStart(2, "0")}`;
-      if (newDate < nowDateStr || (newDate === nowDateStr && newTime <= nowTimeStr)) return;
-
-      // Calculate new end time preserving original duration
-      const originalDuration =
-        toMinutes(booking.endTime) - toMinutes(booking.startTime);
-      const newEndTime = minutesToTimeStr(
-        toMinutes(newTime) + originalDuration
-      );
-
-      // If nothing changed, bail
-      if (newDate === booking.date && newTime === booking.startTime) return;
-
-      // Open reschedule confirmation dialog
-      setRescheduleDialog({
-        booking,
-        newDate,
-        newStartTime: newTime,
-        newEndTime,
-      });
     },
-    [enriched]
+    []
   );
 
   const handleBookingClick = useCallback(
@@ -181,19 +132,10 @@ export default function WeeklyCalendarView() {
   );
 
   const handleBookingResize = useCallback(
-    (bookingId: string, newEndTime: string) => {
-      const booking = enriched.find((b) => b._id === bookingId);
-      if (!booking) return;
-      if (newEndTime === booking.endTime) return;
-
-      setRescheduleDialog({
-        booking,
-        newDate: booking.date,
-        newStartTime: booking.startTime,
-        newEndTime,
-      });
+    (_bookingId: string, _newEndTime: string) => {
+      // Reschedule removed — resize is a no-op
     },
-    [enriched]
+    []
   );
 
   // Navigation
@@ -277,20 +219,6 @@ export default function WeeklyCalendarView() {
         />
       )}
 
-      {/* Reschedule confirmation dialog */}
-      {salon && rescheduleDialog && (
-        <RescheduleConfirmDialog
-          isOpen={true}
-          onClose={() => setRescheduleDialog(null)}
-          booking={rescheduleDialog.booking}
-          newDate={rescheduleDialog.newDate}
-          newStartTime={rescheduleDialog.newStartTime}
-          newEndTime={rescheduleDialog.newEndTime}
-          stylists={stylists}
-          salon={salon}
-          salonId={salonId}
-        />
-      )}
     </div>
   );
 }

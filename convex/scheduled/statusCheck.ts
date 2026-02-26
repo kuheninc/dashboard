@@ -4,7 +4,7 @@ import { internalAction } from "../_generated/server";
 import { internal } from "../_generated/api";
 import { v } from "convex/values";
 
-export const sendCheckin = internalAction({
+export const sendStatusCheck = internalAction({
   args: { bookingId: v.id("bookings") },
   handler: async (ctx, args) => {
     const booking = await ctx.runQuery(internal.bookings.internal.getById, {
@@ -14,9 +14,10 @@ export const sendCheckin = internalAction({
 
     // Skip if already resolved
     if (
-      booking.status.startsWith("cancelled") ||
+      booking.status === "completed" ||
       booking.status === "no_show" ||
-      booking.status === "completed"
+      booking.status === "cancelled" ||
+      booking.status === "rejected"
     ) {
       return;
     }
@@ -35,26 +36,22 @@ export const sendCheckin = internalAction({
     });
     if (!salon) return;
 
-    // Send check-in to each admin
+    // Send WhatsApp to each admin
     for (const adminPhone of salon.adminPhones) {
-      // Update admin conversation state
-      const conversation = await ctx.runQuery(
-        internal.conversations.internal.getBySalonPhone,
-        { salonId: booking.salonId, phone: adminPhone }
-      );
-      if (conversation) {
-        await ctx.runMutation(internal.conversations.internal.updateState, {
-          conversationId: conversation._id,
-          state: "awaiting_checkin_response",
-          flowData: { bookingId: args.bookingId, customerName: customer.name },
-        });
-      }
-
       await ctx.runAction(internal.whatsapp.send.sendTextMessage, {
         salonId: booking.salonId,
         recipientPhone: adminPhone,
-        text: `Did ${customer.name} arrive for their ${booking.startTime} ${service?.name ?? "appointment"}?\n\nReply YES if they're here, or NO if they haven't shown up.`,
+        text: `Booking for ${customer.name} (${service?.name ?? "appointment"}, ${booking.startTime}-${booking.endTime}) just ended.\nPlease mark as completed or no-show in the dashboard.`,
       });
     }
+
+    // Create dashboard notification
+    await ctx.runMutation(internal.notifications.internal.create, {
+      salonId: booking.salonId,
+      type: "status_check" as const,
+      title: `Status check: ${customer.name}`,
+      body: `${service?.name ?? "Appointment"} (${booking.startTime}-${booking.endTime}) just ended. Mark as completed or no-show.`,
+      bookingId: args.bookingId,
+    });
   },
 });

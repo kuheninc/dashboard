@@ -45,25 +45,7 @@ export const webhookIncoming = httpAction(async (ctx, request) => {
     return new Response(null, { status: 200 });
   }
 
-  // Handle interactive button responses (e.g. reschedule confirm/decline)
-  if (message.type === "interactive") {
-    const buttonReply = message.interactive?.button_reply;
-    if (buttonReply) {
-      await ctx.scheduler.runAfter(
-        0,
-        internal.ai.router.handleInteractiveResponse,
-        {
-          waPhoneNumberId,
-          senderPhone,
-          buttonId: buttonReply.id,
-          buttonTitle: buttonReply.title,
-        }
-      );
-    }
-    return new Response(null, { status: 200 });
-  }
-
-  // Only handle text messages otherwise
+  // Only handle text messages
   if (message.type !== "text") {
     return new Response(null, { status: 200 });
   }

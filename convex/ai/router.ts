@@ -1,7 +1,7 @@
 "use node";
 
 import { internalAction } from "../_generated/server";
-import { api, internal } from "../_generated/api";
+import { internal } from "../_generated/api";
 import { v } from "convex/values";
 import { GoogleGenAI, type FunctionDeclaration } from "@google/genai";
 import { buildCustomerSystemPrompt, buildAdminSystemPrompt } from "./prompts";
@@ -14,6 +14,17 @@ function getAI() {
     _ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
   }
   return _ai;
+}
+
+const GEMINI_TIMEOUT_MS = 30_000; // 30 seconds per API call
+
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms)
+    ),
+  ]);
 }
 
 export const handleMessage = internalAction({
@@ -48,50 +59,24 @@ export const handleMessage = internalAction({
       { salonId: salon._id, phone: args.senderPhone }
     );
 
-    // 4. Store incoming message
-    await ctx.runMutation(internal.messages.internal.store, {
-      salonId: salon._id,
-      conversationId,
-      role: "user",
-      content: args.messageBody,
-    });
-
-    // Handle customer replying with preferred times after declining reschedule
-    if (
-      conversation?.state === "awaiting_reschedule_response" &&
-      conversation?.flowData?.awaitingPreferredTimes
-    ) {
-      const bookingId = conversation.flowData
-        .bookingId as Id<"bookings">;
-
-      // Save preferred times and revert booking
-      await ctx.runMutation(api.bookings.mutations.declineReschedule, {
-        bookingId,
-        customerPreferredTimes: args.messageBody,
-      });
-
-      // Acknowledge to customer
-      await ctx.runAction(internal.whatsapp.send.sendTextMessage, {
-        salonId: salon._id,
-        recipientPhone: args.senderPhone,
-        text: "Thank you! We've noted your preferred times and will get back to you shortly with a new time. Your original appointment has been restored.",
-      });
-
-      // Store bot reply
+    // 4. Store incoming message (skip if re-scheduled with empty body)
+    if (args.messageBody) {
       await ctx.runMutation(internal.messages.internal.store, {
         salonId: salon._id,
         conversationId,
-        role: "assistant",
-        content:
-          "Thank you! We've noted your preferred times and will get back to you shortly with a new time. Your original appointment has been restored.",
+        role: "user",
+        content: args.messageBody,
       });
+    }
 
-      // Reset conversation state
-      await ctx.runMutation(internal.conversations.internal.resetToIdle, {
-        conversationId: conversation._id,
-      });
-
-      return;
+    // 4.5. Acquire processing lock to prevent concurrent AI calls for same conversation.
+    // If another handleMessage is already processing, skip — it will see our stored message.
+    const { acquired, startedAt } = await ctx.runMutation(
+      internal.conversations.internal.acquireProcessingLock,
+      { conversationId }
+    );
+    if (!acquired) {
+      return; // Another call is handling this conversation; our message is in history
     }
 
     try {
@@ -117,13 +102,7 @@ export const handleMessage = internalAction({
     let tools: typeof customerTools;
 
     if (isAdmin) {
-      systemPrompt = buildAdminSystemPrompt(
-        salon,
-        services,
-        stylists,
-        conversation?.state ?? "idle",
-        conversation?.flowData
-      );
+      systemPrompt = buildAdminSystemPrompt(salon, services, stylists);
       tools = adminTools;
     } else {
       // Look up customer record
@@ -171,15 +150,19 @@ export const handleMessage = internalAction({
       }));
 
     // 7. Call Gemini with tool loop
-    let response = await getAI().models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: geminiMessages,
-      config: {
-        systemInstruction: systemPrompt,
-        temperature: 0.7,
-        tools: [{ functionDeclarations: tools as unknown as FunctionDeclaration[] }],
-      },
-    });
+    let response = await withTimeout(
+      getAI().models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: geminiMessages,
+        config: {
+          systemInstruction: systemPrompt,
+          temperature: 0.7,
+          tools: [{ functionDeclarations: tools as unknown as FunctionDeclaration[] }],
+        },
+      }),
+      GEMINI_TIMEOUT_MS,
+      "Gemini initial call"
+    );
 
     // Process tool calls in a loop (max 5 iterations to prevent runaway)
     let iterations = 0;
@@ -215,15 +198,19 @@ export const handleMessage = internalAction({
       geminiMessages.push({ role: "model", parts: parts as Record<string, unknown>[] });
       geminiMessages.push({ role: "user", parts: functionResponses });
 
-      response = await getAI().models.generateContent({
-        model: "gemini-2.5-flash",
-        contents: geminiMessages,
-        config: {
-          systemInstruction: systemPrompt,
-          temperature: 0.7,
-          tools: [{ functionDeclarations: tools as unknown as FunctionDeclaration[] }],
-        },
-      });
+      response = await withTimeout(
+        getAI().models.generateContent({
+          model: "gemini-2.5-flash",
+          contents: geminiMessages,
+          config: {
+            systemInstruction: systemPrompt,
+            temperature: 0.7,
+            tools: [{ functionDeclarations: tools as unknown as FunctionDeclaration[] }],
+          },
+        }),
+        GEMINI_TIMEOUT_MS,
+        `Gemini tool loop iteration ${iterations}`
+      );
 
       parts = response.candidates?.[0]?.content?.parts ?? [];
       functionCalls = parts.filter(
@@ -268,6 +255,20 @@ export const handleMessage = internalAction({
         });
       } catch (sendError) {
         console.error("Failed to send error fallback message:", sendError);
+      }
+    } finally {
+      // Release processing lock and check for messages that arrived during processing
+      const { hasNewMessages } = await ctx.runMutation(
+        internal.conversations.internal.releaseProcessingLock,
+        { conversationId, startedAt }
+      );
+      if (hasNewMessages) {
+        // New messages arrived while we were processing — re-schedule to handle them
+        await ctx.scheduler.runAfter(0, internal.ai.router.handleMessage, {
+          waPhoneNumberId: args.waPhoneNumberId,
+          senderPhone: args.senderPhone,
+          messageBody: "", // Content already stored; AI will read from history
+        });
       }
     }
   },
@@ -342,21 +343,34 @@ async function executeTool(
     }
 
     case "create_booking": {
-      const bookingId = await ctx.runMutation(
-        internal.bookings.internal.create,
-        {
-          salonId,
-          customerId: input.customerId as Id<"customers">,
-          stylistId: input.stylistId as Id<"stylists">,
-          serviceId: input.serviceId as Id<"services">,
-          date: input.date as string,
-          startTime: input.startTime as string,
-          createdBy: "customer" as const,
-          preferredStylistId: input.preferredStylistId
-            ? (input.preferredStylistId as Id<"stylists">)
-            : undefined,
+      let bookingId;
+      try {
+        bookingId = await ctx.runMutation(
+          internal.bookings.internal.create,
+          {
+            salonId,
+            customerId: input.customerId as Id<"customers">,
+            stylistId: input.stylistId as Id<"stylists">,
+            serviceId: input.serviceId as Id<"services">,
+            date: input.date as string,
+            startTime: input.startTime as string,
+            createdBy: "customer" as const,
+            preferredStylistId: input.preferredStylistId
+              ? (input.preferredStylistId as Id<"stylists">)
+              : undefined,
+          }
+        );
+      } catch (error: unknown) {
+        const msg = error instanceof Error ? error.message : String(error);
+        if (msg.includes("Time slot conflict")) {
+          return {
+            success: false,
+            error: msg,
+            suggestion: "This time slot is no longer available. Please check availability again for alternative slots.",
+          };
         }
-      );
+        throw error;
+      }
       // Notify admins about pending booking
       const salon = await ctx.runQuery(internal.salons.internal.getById, { salonId });
       const service = await ctx.runQuery(internal.services.internal.getById, {
@@ -381,16 +395,24 @@ async function executeTool(
           await ctx.runAction(internal.whatsapp.send.sendTextMessage, {
             salonId,
             recipientPhone: adminPhone,
-            text: `📋 New booking request:\n${customer?.name ?? "Unknown"} wants ${service?.name ?? "a service"} on ${input.date} at ${input.startTime}.${preferenceNote}\n\nReply to approve or manage.`,
+            text: `📋 New booking request:\n${customer?.name ?? "Unknown"} wants ${service?.name ?? "a service"} on ${input.date} at ${input.startTime}.${preferenceNote}\n\nView and manage in your dashboard.`,
           });
         }
+        // Create dashboard notification
+        await ctx.runMutation(internal.notifications.internal.create, {
+          salonId,
+          type: "pending_booking" as const,
+          title: `New booking: ${customer?.name ?? "Unknown"}`,
+          body: `${service?.name ?? "Service"} on ${input.date} at ${input.startTime}`,
+          bookingId,
+        });
       }
       // Return endTime for multi-service chaining
       const endTimeMinutes = timeToMinutes(input.startTime as string) + (service?.durationMinutes ?? 0);
       return {
         success: true,
         bookingId,
-        status: "pending_approval",
+        status: "pending",
         date: input.date,
         startTime: input.startTime,
         endTime: minutesToTime(endTimeMinutes),
@@ -415,31 +437,29 @@ async function executeTool(
     }
 
     case "cancel_booking": {
-      // Fetch booking details before cancelling for reschedule context
       const cancelledBooking = await ctx.runQuery(
         internal.bookings.internal.getById,
         { bookingId: input.bookingId as Id<"bookings"> }
       );
       await ctx.runMutation(internal.bookings.internal.cancel, {
         bookingId: input.bookingId as Id<"bookings">,
-        cancelledBy: role === "admin" ? "cancelled_admin" as const : "cancelled_customer" as const,
+        cancelledBy: role === "admin" ? "admin" as const : "customer" as const,
         reason: (input.reason as string) || undefined,
       });
-      // If cancelling from a reminder response, set up reschedule flow
-      const conversation = await ctx.runQuery(
-        internal.conversations.internal.getBySalonPhone,
-        { salonId, phone: senderPhone }
-      );
-      if (conversation && conversation.state === "awaiting_reminder_response" && cancelledBooking) {
-        await ctx.runMutation(internal.conversations.internal.updateState, {
-          conversationId: conversation._id,
-          state: "reschedule_flow",
-          flowData: {
-            originalServiceId: cancelledBooking.serviceId,
-            originalDate: cancelledBooking.date,
-            originalStartTime: cancelledBooking.startTime,
-            customerId: cancelledBooking.customerId,
-          },
+      // Create dashboard notification if customer cancelled
+      if (role === "customer" && cancelledBooking) {
+        const customer = await ctx.runQuery(internal.customers.internal.getByPhone, {
+          salonId, phone: senderPhone,
+        });
+        const service = await ctx.runQuery(internal.services.internal.getById, {
+          serviceId: cancelledBooking.serviceId,
+        });
+        await ctx.runMutation(internal.notifications.internal.create, {
+          salonId,
+          type: "customer_cancelled" as const,
+          title: `Booking cancelled: ${customer?.name ?? "Customer"}`,
+          body: `${service?.name ?? "Service"} on ${cancelledBooking.date} at ${cancelledBooking.startTime}`,
+          bookingId: input.bookingId as Id<"bookings">,
         });
       }
       return {
@@ -513,7 +533,7 @@ async function executeTool(
       if (toolName === "count_bookings") {
         const active = bookings.filter(
           (b: Record<string, unknown>) =>
-            b.status !== "cancelled_customer" && b.status !== "cancelled_admin"
+            b.status !== "cancelled" && b.status !== "rejected"
         );
         return { total: bookings.length, active: active.length };
       }
@@ -540,115 +560,6 @@ async function executeTool(
         });
       }
       return enriched;
-    }
-
-    case "approve_booking": {
-      // Mutation handles notification + GCal sync via scheduled action
-      await ctx.runMutation(internal.bookings.internal.approve, {
-        bookingId: input.bookingId as Id<"bookings">,
-        adminPhone: senderPhone,
-      });
-      return { success: true };
-    }
-
-    case "admin_create_booking": {
-      // Look up or create customer
-      let customer = await ctx.runQuery(internal.customers.internal.getByPhone, {
-        salonId,
-        phone: input.customerPhone as string,
-      });
-      if (!customer) {
-        const customerId = await ctx.runMutation(
-          internal.customers.internal.create,
-          {
-            salonId,
-            name: "Walk-in",
-            phone: input.customerPhone as string,
-          }
-        );
-        customer = await ctx.runQuery(internal.customers.internal.getById, {
-          customerId,
-        });
-      }
-      if (!customer) return { success: false, error: "Could not find/create customer" };
-
-      const bookingId = await ctx.runMutation(internal.bookings.internal.create, {
-        salonId,
-        customerId: customer._id,
-        stylistId: input.stylistId as Id<"stylists">,
-        serviceId: input.serviceId as Id<"services">,
-        date: input.date as string,
-        startTime: input.startTime as string,
-        createdBy: "admin" as const,
-      });
-      // Admin bookings are immediately confirmed — sync to GCal
-      ctx.runAction(internal.calendar.sync.createEvent, {
-        salonId,
-        bookingId,
-      }).catch(() => {});
-      return { success: true, bookingId, status: "confirmed" };
-    }
-
-    case "admin_cancel_booking": {
-      await ctx.runMutation(internal.bookings.internal.cancel, {
-        bookingId: input.bookingId as Id<"bookings">,
-        cancelledBy: "cancelled_admin" as const,
-        reason: (input.reason as string) || undefined,
-      });
-      return { success: true };
-    }
-
-    case "add_service": {
-      const serviceId = await ctx.runMutation(
-        internal.services.internal.create,
-        {
-          salonId,
-          name: input.name as string,
-          nameBM: (input.nameBM as string) || undefined,
-          durationMinutes: input.durationMinutes as number,
-          priceRM: input.priceRM as number,
-        }
-      );
-      return { success: true, serviceId };
-    }
-
-    case "update_service": {
-      await ctx.runMutation(internal.services.internal.update, {
-        serviceId: input.serviceId as Id<"services">,
-        name: (input.name as string) || undefined,
-        nameBM: (input.nameBM as string) || undefined,
-        durationMinutes: (input.durationMinutes as number) || undefined,
-        priceRM: (input.priceRM as number) || undefined,
-      });
-      return { success: true };
-    }
-
-    case "remove_service": {
-      await ctx.runMutation(internal.services.internal.deactivate, {
-        serviceId: input.serviceId as Id<"services">,
-      });
-      return { success: true };
-    }
-
-    case "update_hours": {
-      await ctx.runMutation(internal.salons.internal.updateHours, {
-        salonId,
-        openingHours: input.openingHours as {
-          day: number;
-          open: string;
-          close: string;
-          isClosed: boolean;
-        }[],
-      });
-      return { success: true };
-    }
-
-    case "update_closed_dates": {
-      await ctx.runMutation(internal.salons.internal.updateClosedDates, {
-        salonId,
-        closedDates: input.closedDates as string[],
-      });
-      return { success: true };
     }
 
     case "get_no_show_report": {
@@ -682,91 +593,6 @@ async function executeTool(
         });
       }
       return enriched;
-    }
-
-    case "mark_no_show": {
-      await ctx.runMutation(internal.bookings.internal.markNoShow, {
-        bookingId: input.bookingId as Id<"bookings">,
-      });
-      return { success: true };
-    }
-
-    case "mark_completed": {
-      await ctx.runMutation(internal.bookings.internal.markCompleted, {
-        bookingId: input.bookingId as Id<"bookings">,
-      });
-      return { success: true };
-    }
-
-    case "reject_booking": {
-      const rejectBooking = await ctx.runQuery(internal.bookings.internal.getById, {
-        bookingId: input.bookingId as Id<"bookings">,
-      });
-      if (!rejectBooking) return { error: "Booking not found" };
-      if (rejectBooking.status !== "pending_approval") {
-        return { error: "Can only reject pending bookings" };
-      }
-      await ctx.runMutation(internal.bookings.internal.reject, {
-        bookingId: input.bookingId as Id<"bookings">,
-        reason: (input.reason as string) || undefined,
-      });
-      // GCal cleanup
-      ctx.runAction(internal.calendar.sync.deleteEvent, {
-        salonId,
-        bookingId: input.bookingId as Id<"bookings">,
-      }).catch(() => {});
-      // Find alternatives for customer
-      const rejectCustomer = await ctx.runQuery(internal.customers.internal.getById, {
-        customerId: rejectBooking.customerId,
-      });
-      const rejectService = await ctx.runQuery(internal.services.internal.getById, {
-        serviceId: rejectBooking.serviceId,
-      });
-      const alternatives = await checkAvailability(
-        ctx, salonId, rejectBooking.serviceId, rejectBooking.date
-      );
-      const altSlots = (alternatives as { slots?: { startTime: string; endTime: string }[] })?.slots ?? [];
-      // Sort by proximity to original time
-      const origMinutes = timeToMinutes(rejectBooking.startTime);
-      const sortedAlts = altSlots
-        .map((s) => ({ ...s, distance: Math.abs(timeToMinutes(s.startTime) - origMinutes) }))
-        .sort((a, b) => a.distance - b.distance)
-        .slice(0, 5);
-
-      if (rejectCustomer) {
-        let altText: string;
-        if (sortedAlts.length > 0) {
-          const slotList = sortedAlts
-            .map((s, i) => `${i + 1}. ${s.startTime} - ${s.endTime}`)
-            .join("\n");
-          altText = `We're sorry, your ${rejectService?.name ?? "appointment"} request for ${rejectBooking.date} at ${rejectBooking.startTime} couldn't be accommodated.\n\nHere are some alternative times:\n${slotList}\n\nWould you like to book one of these? Or reply with a different date.`;
-        } else {
-          altText = `We're sorry, your ${rejectService?.name ?? "appointment"} request for ${rejectBooking.date} at ${rejectBooking.startTime} couldn't be accommodated, and no other slots are available on that date.\n\nWould you like to try a different date?`;
-        }
-        await ctx.runAction(internal.whatsapp.send.sendTextMessage, {
-          salonId,
-          recipientPhone: rejectCustomer.phone,
-          text: altText,
-        });
-        // Set customer conversation state for rebooking
-        const rejectConv = await ctx.runQuery(
-          internal.conversations.internal.getBySalonPhone,
-          { salonId, phone: rejectCustomer.phone }
-        );
-        if (rejectConv) {
-          await ctx.runMutation(internal.conversations.internal.updateState, {
-            conversationId: rejectConv._id,
-            state: "reschedule_flow",
-            flowData: {
-              originalServiceId: rejectBooking.serviceId,
-              originalDate: rejectBooking.date,
-              originalStartTime: rejectBooking.startTime,
-              customerId: rejectBooking.customerId,
-            },
-          });
-        }
-      }
-      return { success: true, alternativesOffered: sortedAlts.length, customerNotified: !!rejectCustomer };
     }
 
     default:
@@ -818,7 +644,7 @@ async function checkAvailability(
     );
     const activeBookings = existingBookings.filter(
       (b: Record<string, unknown>) =>
-        b.status !== "cancelled_customer" && b.status !== "cancelled_admin" && b.status !== "no_show" && b.status !== "rejected"
+        b.status !== "cancelled" && b.status !== "no_show" && b.status !== "rejected"
     );
 
     // Generate 15-min increment slots within stylist working hours
@@ -868,80 +694,6 @@ async function checkAvailability(
     slots: slots.slice(0, 10),
   };
 }
-
-export const handleInteractiveResponse = internalAction({
-  args: {
-    waPhoneNumberId: v.string(),
-    senderPhone: v.string(),
-    buttonId: v.string(),
-    buttonTitle: v.string(),
-  },
-  handler: async (ctx, args) => {
-    // Look up salon
-    const salon = await ctx.runQuery(
-      internal.salons.internal.getByWaPhoneNumberId,
-      { waPhoneNumberId: args.waPhoneNumberId }
-    );
-    if (!salon) return;
-
-    // Handle reschedule confirm/decline buttons
-    if (args.buttonId.startsWith("reschedule_confirm_")) {
-      const bookingId = args.buttonId.replace(
-        "reschedule_confirm_",
-        ""
-      ) as Id<"bookings">;
-
-      await ctx.runMutation(api.bookings.mutations.confirmReschedule, {
-        bookingId,
-      });
-
-      // Send confirmation message
-      await ctx.runAction(internal.whatsapp.send.sendTextMessage, {
-        salonId: salon._id,
-        recipientPhone: args.senderPhone,
-        text: "Great! Your rescheduled appointment has been confirmed. See you then! ✅",
-      });
-
-      // Reset conversation state
-      const conversation = await ctx.runQuery(
-        internal.conversations.internal.getBySalonPhone,
-        { salonId: salon._id, phone: args.senderPhone }
-      );
-      if (conversation) {
-        await ctx.runMutation(internal.conversations.internal.resetToIdle, {
-          conversationId: conversation._id,
-        });
-      }
-    } else if (args.buttonId.startsWith("reschedule_decline_")) {
-      const bookingId = args.buttonId.replace(
-        "reschedule_decline_",
-        ""
-      ) as Id<"bookings">;
-
-      // Ask the customer for their preferred times
-      await ctx.runAction(internal.whatsapp.send.sendTextMessage, {
-        salonId: salon._id,
-        recipientPhone: args.senderPhone,
-        text: "No problem! Could you let us know what times work better for you? We'll do our best to accommodate.",
-      });
-
-      // Keep conversation in awaiting_reschedule_response state
-      // The next text message from the customer will be captured by the AI router
-      // which will save their preferred times and notify admin
-      const conversation = await ctx.runQuery(
-        internal.conversations.internal.getBySalonPhone,
-        { salonId: salon._id, phone: args.senderPhone }
-      );
-      if (conversation) {
-        await ctx.runMutation(internal.conversations.internal.updateState, {
-          conversationId: conversation._id,
-          state: "awaiting_reschedule_response",
-          flowData: { bookingId, awaitingPreferredTimes: true },
-        });
-      }
-    }
-  },
-});
 
 function timeToMinutes(time: string): number {
   const [h, m] = time.split(":").map(Number);

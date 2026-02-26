@@ -1,36 +1,22 @@
 export type BookingStatus =
-  | "pending_approval"
+  | "pending"
   | "confirmed"
-  | "reminder_sent"
-  | "customer_confirmed"
   | "completed"
   | "no_show"
-  | "cancelled_customer"
-  | "cancelled_admin"
-  | "rejected"
-  | "reschedule_pending";
+  | "cancelled"
+  | "rejected";
 
 const statusConfig: Record<
   BookingStatus,
   { label: string; color: string; bg: string }
 > = {
-  pending_approval: {
+  pending: {
     label: "Pending",
     color: "#c4983e",
     bg: "rgba(196,152,62,0.08)",
   },
   confirmed: {
     label: "Confirmed",
-    color: "#5a9a6e",
-    bg: "rgba(90,154,110,0.08)",
-  },
-  reminder_sent: {
-    label: "Reminded",
-    color: "#5a9a6e",
-    bg: "rgba(90,154,110,0.08)",
-  },
-  customer_confirmed: {
-    label: "Customer OK",
     color: "#5a9a6e",
     bg: "rgba(90,154,110,0.08)",
   },
@@ -44,12 +30,7 @@ const statusConfig: Record<
     color: "#c45a5a",
     bg: "rgba(196,90,90,0.08)",
   },
-  cancelled_customer: {
-    label: "Cancelled",
-    color: "#c45a5a",
-    bg: "rgba(196,90,90,0.06)",
-  },
-  cancelled_admin: {
+  cancelled: {
     label: "Cancelled",
     color: "#c45a5a",
     bg: "rgba(196,90,90,0.06)",
@@ -58,11 +39,6 @@ const statusConfig: Record<
     label: "Rejected",
     color: "#c45a5a",
     bg: "rgba(196,90,90,0.08)",
-  },
-  reschedule_pending: {
-    label: "Rescheduling",
-    color: "#508cb4",
-    bg: "rgba(80,140,180,0.08)",
   },
 };
 

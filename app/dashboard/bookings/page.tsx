@@ -29,7 +29,7 @@ export default function BookingsPage() {
   const cancelledCount = useMemo(() => {
     if (!monthBookings) return 0;
     return monthBookings.filter(
-      (b) => b.status === "cancelled_customer" || b.status === "cancelled_admin"
+      (b) => b.status === "cancelled"
     ).length;
   }, [monthBookings]);
 

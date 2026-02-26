@@ -32,7 +32,7 @@ export default function AnalyticsPage() {
     const revenue = completed.reduce((sum, b) => sum + b.servicePrice, 0);
     const avgValue = completed.length > 0 ? Math.round(revenue / completed.length) : 0;
     const nonCancelled = enriched.filter(
-      (b) => b.status !== "cancelled_customer" && b.status !== "cancelled_admin"
+      (b) => b.status !== "cancelled" && b.status !== "rejected"
     );
     const completionRate = nonCancelled.length > 0
       ? Math.round((completed.length / nonCancelled.length) * 100)
@@ -95,7 +95,7 @@ export default function AnalyticsPage() {
     }));
 
     const confirmed = enriched.filter(
-      (b) => ["confirmed", "reminder_sent", "customer_confirmed"].includes(b.status)
+      (b) => b.status === "confirmed"
     ).length;
     const completedCount = completed.length;
     const funnelData = [

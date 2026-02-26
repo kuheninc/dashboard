@@ -60,7 +60,7 @@ export const getPendingApproval = query({
     return await ctx.db
       .query("bookings")
       .withIndex("by_salon_status", (q) =>
-        q.eq("salonId", args.salonId).eq("status", "pending_approval")
+        q.eq("salonId", args.salonId).eq("status", "pending")
       )
       .collect();
   },
@@ -86,13 +86,7 @@ export const checkConflicts = query({
       )
       .collect();
 
-    const activeStatuses = [
-      "pending_approval",
-      "confirmed",
-      "reminder_sent",
-      "customer_confirmed",
-      "reschedule_pending",
-    ];
+    const activeStatuses = ["pending", "confirmed"];
 
     const toMin = (t: string) => {
       const [h, m] = t.split(":").map(Number);

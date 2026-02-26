@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Check, X, Clock } from "lucide-react";
@@ -12,6 +13,7 @@ export default function PendingApprovals() {
   const approve = useMutation(api.bookings.mutations.approve);
   const reject = useMutation(api.bookings.mutations.reject);
   const bookings = useQuery(api.bookings.queries.getPendingApproval, { salonId });
+  const [error, setError] = useState<string | null>(null);
 
   // Still loading
   if (bookings === undefined) return null;
@@ -36,6 +38,12 @@ export default function PendingApprovals() {
           {enriched.length}
         </span>
       </div>
+
+      {error && (
+        <div className="px-3 py-2 rounded-lg text-[12px] font-medium" style={{ color: "#c45a5a", backgroundColor: "rgba(196,90,90,0.08)", border: "1px solid rgba(196,90,90,0.15)" }}>
+          {error}
+        </div>
+      )}
 
       <div className="flex gap-3 overflow-x-auto pb-1 -mx-4 px-4 sm:mx-0 sm:px-0">
         {enriched.map((booking) => (
@@ -86,12 +94,19 @@ export default function PendingApprovals() {
 
               <div className="flex gap-2">
                 <button
-                  onClick={() =>
-                    approve({
-                      bookingId: booking._id as Id<"bookings">,
-                      adminPhone: salon.adminPhones[0],
-                    })
-                  }
+                  onClick={async () => {
+                    try {
+                      setError(null);
+                      await approve({
+                        bookingId: booking._id as Id<"bookings">,
+                        adminPhone: salon.adminPhones[0],
+                      });
+                    } catch (err: unknown) {
+                      const msg = err instanceof Error ? err.message : String(err);
+                      setError(msg.includes("Cannot approve") ? msg : "Failed to approve booking");
+                      setTimeout(() => setError(null), 5000);
+                    }
+                  }}
                   className="flex-1 h-8 text-[12px] font-medium rounded-lg inline-flex items-center justify-center transition-colors"
                   style={{
                     color: "#fff",

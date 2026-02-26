@@ -22,15 +22,12 @@ import {
 } from "date-fns";
 
 const statusDotColor: Record<string, string> = {
-  pending_approval: "bg-[#c4983e]",
+  pending: "bg-[#c4983e]",
   confirmed: "bg-[#5a9a6e]",
-  reminder_sent: "bg-[#508cb4]",
-  customer_confirmed: "bg-[#8278b4]",
   completed: "bg-[#5a9a6e]",
   no_show: "bg-[#c45a5a]",
-  cancelled_customer: "bg-[#9c9184]",
-  cancelled_admin: "bg-[#9c9184]",
-  reschedule_pending: "bg-[#508cb4]",
+  cancelled: "bg-[#9c9184]",
+  rejected: "bg-[#c45a5a]",
 };
 
 function getMonthRange(month: Date): { startDate: string; endDate: string } {

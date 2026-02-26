@@ -69,7 +69,7 @@ function deriveActivities(bookings: EnrichedBooking[]): ActivityItem[] {
     } else if (b.status === "no_show") {
       type = "no_show";
       detail = `did not show up for ${b.serviceName}`;
-    } else if (b.status === "cancelled_customer" || b.status === "cancelled_admin") {
+    } else if (b.status === "cancelled") {
       type = "cancellation";
       detail = `cancelled ${b.serviceName} appointment`;
     } else {

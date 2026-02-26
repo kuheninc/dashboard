@@ -9,7 +9,7 @@ import { useDashboard } from "@/lib/dashboard-context";
 import { enrichBookings, getTodayDateStr } from "@/lib/dashboard-helpers";
 import { Clock, MoreVertical, Check, X, CalendarOff } from "lucide-react";
 
-const TERMINAL_STATUSES = ["completed", "no_show", "cancelled_customer", "cancelled_admin"];
+const TERMINAL_STATUSES = ["completed", "no_show", "cancelled", "rejected"];
 
 /** Show full first name + last initial to avoid aggressive truncation */
 function compactName(name: string): string {
@@ -52,7 +52,7 @@ function ScheduleActions({ bookingId }: { bookingId: Id<"bookings"> }) {
             Mark Completed
           </button>
           <button
-            onClick={() => { cancelBooking({ bookingId, cancelledBy: "cancelled_admin" }); setOpen(false); }}
+            onClick={() => { cancelBooking({ bookingId, cancelledBy: "admin" }); setOpen(false); }}
             className="w-full flex items-center gap-2 px-3 py-2 text-[12px] font-medium hover:bg-[rgba(166,139,107,0.06)] transition-colors"
             style={{ color: "#c45a5a" }}
           >

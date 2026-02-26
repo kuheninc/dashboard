@@ -55,7 +55,7 @@ export const customerTools: GeminiFunctionDeclaration[] = [
   {
     name: "create_booking",
     description:
-      "Create a new booking. Status will be pending_approval (needs admin confirmation). Returns endTime for multi-service chaining.",
+      "Create a new booking. Status will be pending (needs admin confirmation). Returns endTime for multi-service chaining.",
     parameters: {
       type: "OBJECT",
       properties: {
@@ -141,120 +141,11 @@ export const adminTools: GeminiFunctionDeclaration[] = [
     },
   },
   {
-    name: "approve_booking",
-    description: "Approve a pending booking.",
+    name: "get_pending_bookings",
+    description: "Get all bookings awaiting admin approval.",
     parameters: {
       type: "OBJECT",
-      properties: {
-        bookingId: { type: "STRING", description: "Booking ID to approve" },
-      },
-      required: ["bookingId"],
-    },
-  },
-  {
-    name: "admin_create_booking",
-    description: "Create a booking directly (auto-confirmed, no approval needed).",
-    parameters: {
-      type: "OBJECT",
-      properties: {
-        customerPhone: { type: "STRING", description: "Customer phone number" },
-        stylistId: { type: "STRING", description: "Stylist ID" },
-        serviceId: { type: "STRING", description: "Service ID" },
-        date: { type: "STRING", description: "Date YYYY-MM-DD" },
-        startTime: { type: "STRING", description: "Start time HH:MM" },
-      },
-      required: ["customerPhone", "stylistId", "serviceId", "date", "startTime"],
-    },
-  },
-  {
-    name: "admin_cancel_booking",
-    description: "Cancel any booking as admin.",
-    parameters: {
-      type: "OBJECT",
-      properties: {
-        bookingId: { type: "STRING", description: "Booking ID" },
-        reason: { type: "STRING", description: "Cancellation reason" },
-      },
-      required: ["bookingId"],
-    },
-  },
-  {
-    name: "add_service",
-    description: "Add a new service to the salon.",
-    parameters: {
-      type: "OBJECT",
-      properties: {
-        name: { type: "STRING", description: "Service name in English" },
-        nameBM: { type: "STRING", description: "Service name in Bahasa Malaysia (optional)" },
-        durationMinutes: { type: "NUMBER", description: "Duration in minutes" },
-        priceRM: { type: "NUMBER", description: "Price in RM" },
-      },
-      required: ["name", "durationMinutes", "priceRM"],
-    },
-  },
-  {
-    name: "update_service",
-    description: "Update an existing service's details.",
-    parameters: {
-      type: "OBJECT",
-      properties: {
-        serviceId: { type: "STRING", description: "Service ID" },
-        name: { type: "STRING", description: "New name (optional)" },
-        nameBM: { type: "STRING", description: "New BM name (optional)" },
-        durationMinutes: { type: "NUMBER", description: "New duration (optional)" },
-        priceRM: { type: "NUMBER", description: "New price (optional)" },
-      },
-      required: ["serviceId"],
-    },
-  },
-  {
-    name: "remove_service",
-    description: "Deactivate a service (soft delete).",
-    parameters: {
-      type: "OBJECT",
-      properties: {
-        serviceId: { type: "STRING", description: "Service ID" },
-      },
-      required: ["serviceId"],
-    },
-  },
-  {
-    name: "update_hours",
-    description: "Update salon opening hours.",
-    parameters: {
-      type: "OBJECT",
-      properties: {
-        openingHours: {
-          type: "ARRAY",
-          items: {
-            type: "OBJECT",
-            properties: {
-              day: { type: "NUMBER", description: "0=Sunday..6=Saturday" },
-              open: { type: "STRING", description: "Opening time HH:MM" },
-              close: { type: "STRING", description: "Closing time HH:MM" },
-              isClosed: { type: "BOOLEAN" },
-            },
-            required: ["day", "open", "close", "isClosed"],
-          },
-          description: "Array of 7 day entries",
-        },
-      },
-      required: ["openingHours"],
-    },
-  },
-  {
-    name: "update_closed_dates",
-    description: "Update the list of closed dates.",
-    parameters: {
-      type: "OBJECT",
-      properties: {
-        closedDates: {
-          type: "ARRAY",
-          items: { type: "STRING" },
-          description: "Array of dates in YYYY-MM-DD format",
-        },
-      },
-      required: ["closedDates"],
+      properties: {},
     },
   },
   {
@@ -265,49 +156,6 @@ export const adminTools: GeminiFunctionDeclaration[] = [
       properties: {
         threshold: { type: "NUMBER", description: "Minimum no-show count (default 3)" },
       },
-    },
-  },
-  {
-    name: "get_pending_bookings",
-    description: "Get all bookings awaiting admin approval.",
-    parameters: {
-      type: "OBJECT",
-      properties: {},
-    },
-  },
-  {
-    name: "mark_no_show",
-    description: "Mark a booking as no-show. Increments customer's no-show count.",
-    parameters: {
-      type: "OBJECT",
-      properties: {
-        bookingId: { type: "STRING", description: "Booking ID" },
-      },
-      required: ["bookingId"],
-    },
-  },
-  {
-    name: "mark_completed",
-    description: "Mark a booking as completed (customer arrived and was served).",
-    parameters: {
-      type: "OBJECT",
-      properties: {
-        bookingId: { type: "STRING", description: "Booking ID" },
-      },
-      required: ["bookingId"],
-    },
-  },
-  {
-    name: "reject_booking",
-    description:
-      "Reject a pending booking. Automatically offers the customer alternative time slots close to their original request. Use this instead of admin_cancel_booking for pending bookings.",
-    parameters: {
-      type: "OBJECT",
-      properties: {
-        bookingId: { type: "STRING", description: "Booking ID to reject" },
-        reason: { type: "STRING", description: "Reason for rejection (e.g. 'stylist unavailable', 'slot conflict')" },
-      },
-      required: ["bookingId"],
     },
   },
 ];

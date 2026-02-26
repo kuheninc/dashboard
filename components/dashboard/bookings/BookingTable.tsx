@@ -10,24 +10,20 @@ import { enrichBookings } from "@/lib/dashboard-helpers";
 import { Search, Filter, MoreHorizontal, Check, X, AlertTriangle, CheckCircle2, Star, ArrowUpDown } from "lucide-react";
 
 type BookingStatus =
-  | "pending_approval"
+  | "pending"
   | "confirmed"
-  | "reminder_sent"
-  | "customer_confirmed"
   | "completed"
   | "no_show"
-  | "cancelled_customer"
-  | "cancelled_admin"
-  | "rejected"
-  | "reschedule_pending";
+  | "cancelled"
+  | "rejected";
 
-const TERMINAL_STATUSES: BookingStatus[] = ["completed", "no_show", "cancelled_customer", "cancelled_admin", "rejected"];
+const TERMINAL_STATUSES: BookingStatus[] = ["completed", "no_show", "cancelled", "rejected"];
 
-const UPCOMING_STATUSES: BookingStatus[] = ["pending_approval", "confirmed", "reminder_sent", "customer_confirmed", "reschedule_pending"];
+const UPCOMING_STATUSES: BookingStatus[] = ["pending", "confirmed"];
 
 const statusOptions: { label: string; value: BookingStatus | "all" }[] = [
   { label: "All", value: "all" },
-  { label: "Pending", value: "pending_approval" },
+  { label: "Pending", value: "pending" },
   { label: "Confirmed", value: "confirmed" },
 ];
 
@@ -97,6 +93,7 @@ function ActionsDropdown({
   feedbackRequestedAt?: number;
 }) {
   const [open, setOpen] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const ref = useRef<HTMLDivElement>(null);
   const { salon } = useDashboard();
 
@@ -121,11 +118,20 @@ function ActionsDropdown({
 
   const actions: { label: string; icon: React.ReactNode; onClick: () => void; color?: string; disabled?: boolean }[] = [];
 
-  if (status === "pending_approval") {
+  if (status === "pending") {
     actions.push({
       label: "Approve",
       icon: <Check className="w-3.5 h-3.5" />,
-      onClick: () => approveMut({ bookingId, adminPhone: salon.adminPhones[0] }),
+      onClick: async () => {
+        try {
+          setErrorMsg(null);
+          await approveMut({ bookingId, adminPhone: salon.adminPhones[0] });
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : String(err);
+          setErrorMsg(msg.includes("Cannot approve") ? msg : "Failed to approve booking");
+          setTimeout(() => setErrorMsg(null), 5000);
+        }
+      },
       color: "#5a9a6e",
     });
     actions.push({
@@ -167,7 +173,7 @@ function ActionsDropdown({
     actions.push({
       label: "Cancel",
       icon: <X className="w-3.5 h-3.5" />,
-      onClick: () => cancelMut({ bookingId, cancelledBy: "cancelled_admin" }),
+      onClick: () => cancelMut({ bookingId, cancelledBy: "admin" }),
       color: "#c45a5a",
     });
   }
@@ -180,7 +186,12 @@ function ActionsDropdown({
       >
         <MoreHorizontal className="w-4 h-4 text-[#9c9184]" />
       </button>
-      {open && (
+      {errorMsg && (
+        <div className="absolute right-0 top-full mt-1 z-20 bg-card border rounded-lg shadow-lg px-3 py-2 min-w-[200px] max-w-[280px] text-[11px] text-[#c45a5a]" style={{ borderColor: "rgba(196,90,90,0.2)", backgroundColor: "rgba(196,90,90,0.05)" }}>
+          {errorMsg}
+        </div>
+      )}
+      {open && !errorMsg && (
         <div className="absolute right-0 top-full mt-1 z-20 bg-card border border-border rounded-lg shadow-lg py-1 min-w-[160px]">
           {actions.map((action) => (
             <button

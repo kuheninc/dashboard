@@ -8,7 +8,7 @@ import type { Id } from "@/convex/_generated/dataModel";
 import BookingStatusBadge from "@/components/dashboard/BookingStatusBadge";
 import type { EnrichedBooking } from "@/lib/dashboard-helpers";
 import type { StylistColor } from "./BookingBlock";
-import { X, Check, XCircle, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { X, Check, XCircle, AlertTriangle, CheckCircle2, AlertCircle } from "lucide-react";
 import { format } from "date-fns";
 
 interface BookingPopoverProps {
@@ -31,6 +31,7 @@ export default function BookingPopover({
   const cancel = useMutation(api.bookings.mutations.cancel);
   const markCompleted = useMutation(api.bookings.mutations.markCompleted);
   const markNoShow = useMutation(api.bookings.mutations.markNoShow);
+  const [conflictError, setConflictError] = useState<string | null>(null);
 
   // Track scroll offset so popover moves with the calendar
   const [scrollOffset, setScrollOffset] = useState({ x: 0, y: 0 });
@@ -94,13 +95,8 @@ export default function BookingPopover({
     "EEEE, MMM d, yyyy"
   );
 
-  const isPending = booking.status === "pending_approval";
-  const isActive = [
-    "confirmed",
-    "reminder_sent",
-    "customer_confirmed",
-    "reschedule_pending",
-  ].includes(booking.status);
+  const isPending = booking.status === "pending";
+  const isActive = booking.status === "confirmed";
 
   return createPortal(
     <div
@@ -171,20 +167,15 @@ export default function BookingPopover({
           </span>
         </p>
 
-        {booking.previousDate && (
-          <div className="p-2 rounded-lg bg-[rgba(80,140,180,0.06)] border border-[rgba(80,140,180,0.15)]">
-            <p className="text-[10px] text-[#508cb4]">
-              Rescheduled from {booking.previousDate} at{" "}
-              {booking.previousStartTime}
-            </p>
-            {booking.customerPreferredTimes && (
-              <p className="text-[10px] text-[#508cb4] mt-0.5">
-                Customer prefers: {booking.customerPreferredTimes}
-              </p>
-            )}
-          </div>
-        )}
       </div>
+
+      {/* Conflict error */}
+      {conflictError && (
+        <div className="mx-4 mb-1 px-2.5 py-2 rounded-md flex items-start gap-1.5" style={{ backgroundColor: "rgba(196,90,90,0.08)" }}>
+          <AlertCircle className="w-3 h-3 mt-0.5 flex-shrink-0" style={{ color: "#c45a5a" }} />
+          <p className="text-[11px] text-[#c45a5a] leading-snug">{conflictError}</p>
+        </div>
+      )}
 
       {/* Actions */}
       {(isPending || isActive) && (
@@ -192,9 +183,19 @@ export default function BookingPopover({
           {isPending && (
             <>
               <button
-                onClick={() => {
-                  approve({ bookingId: booking._id as Id<"bookings"> });
-                  onClose();
+                onClick={async () => {
+                  try {
+                    setConflictError(null);
+                    await approve({ bookingId: booking._id as Id<"bookings"> });
+                    onClose();
+                  } catch (err: unknown) {
+                    const msg = err instanceof Error ? err.message : String(err);
+                    if (msg.includes("Cannot approve")) {
+                      setConflictError(msg);
+                    } else {
+                      setConflictError("Failed to approve booking");
+                    }
+                  }
                 }}
                 className="flex items-center gap-1 px-2.5 py-1.5 rounded-md text-[11px] font-medium bg-[rgba(90,154,110,0.1)] text-[#5a9a6e] hover:bg-[rgba(90,154,110,0.18)] transition-colors"
               >
@@ -215,7 +216,7 @@ export default function BookingPopover({
               </button>
             </>
           )}
-          {isActive && booking.status !== "reschedule_pending" && (
+          {isActive && (
             <>
               <button
                 onClick={() => {
@@ -245,7 +246,7 @@ export default function BookingPopover({
                 onClick={() => {
                   cancel({
                     bookingId: booking._id as Id<"bookings">,
-                    cancelledBy: "cancelled_admin",
+                    cancelledBy: "admin",
                   });
                   onClose();
                 }}

@@ -9,21 +9,18 @@ import { enrichBookings } from "@/lib/dashboard-helpers";
 import { Search, Filter, ChevronLeft, ChevronRight, ArrowUpDown } from "lucide-react";
 
 type BookingStatus =
-  | "pending_approval"
+  | "pending"
   | "confirmed"
-  | "reminder_sent"
-  | "customer_confirmed"
   | "completed"
   | "no_show"
-  | "cancelled_customer"
-  | "cancelled_admin"
+  | "cancelled"
   | "rejected";
 
 const statusOptions: { label: string; value: BookingStatus | "all" }[] = [
   { label: "All", value: "all" },
   { label: "Completed", value: "completed" },
   { label: "No Show", value: "no_show" },
-  { label: "Cancelled", value: "cancelled_customer" },
+  { label: "Cancelled", value: "cancelled" },
   { label: "Rejected", value: "rejected" },
 ];
 
@@ -232,8 +229,8 @@ export default function BookingLogs() {
   const filtered = enriched
     .filter((b) => {
       if (statusFilter === "all") return true;
-      if (statusFilter === "cancelled_customer") {
-        return b.status === "cancelled_customer" || b.status === "cancelled_admin";
+      if (statusFilter === "cancelled") {
+        return b.status === "cancelled";
       }
       return b.status === statusFilter;
     })

@@ -38,7 +38,7 @@ export default function TeamPage() {
   const totalBookingsMonth = bookings?.length ?? 0;
   const totalCompleted = bookings?.filter((b) => b.status === "completed").length ?? 0;
   const totalNonCancelled = bookings?.filter(
-    (b) => b.status !== "cancelled_customer" && b.status !== "cancelled_admin"
+    (b) => b.status !== "cancelled" && b.status !== "rejected"
   ).length ?? 0;
   const avgCompletionRate = totalNonCancelled > 0
     ? Math.round((totalCompleted / totalNonCancelled) * 100)

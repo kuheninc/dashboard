@@ -34,11 +34,7 @@ export const updateState = mutation({
       v.literal("idle"),
       v.literal("collecting_info"),
       v.literal("booking_flow"),
-      v.literal("reschedule_flow"),
-      v.literal("cancel_flow"),
-      v.literal("awaiting_reminder_response"),
-      v.literal("awaiting_checkin_response"),
-      v.literal("admin_updating")
+      v.literal("awaiting_reminder_response")
     ),
     flowData: v.optional(v.any()),
   },

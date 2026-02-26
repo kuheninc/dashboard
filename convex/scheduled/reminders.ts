@@ -12,11 +12,12 @@ export const sendReminder = internalAction({
     });
     if (!booking) return;
 
-    // Skip if already cancelled or completed
+    // Skip if already resolved
     if (
-      booking.status.startsWith("cancelled") ||
+      booking.status === "cancelled" ||
       booking.status === "no_show" ||
-      booking.status === "completed"
+      booking.status === "completed" ||
+      booking.status === "rejected"
     ) {
       return;
     }
@@ -30,12 +31,7 @@ export const sendReminder = internalAction({
       serviceId: booking.serviceId,
     });
 
-    // Mark booking as reminder_sent
-    await ctx.runMutation(internal.bookings.internal.markReminderSent, {
-      bookingId: args.bookingId,
-    });
-
-    // Update conversation state
+    // Update conversation state (booking status stays "confirmed")
     const conversation = await ctx.runQuery(
       internal.conversations.internal.getBySalonPhone,
       { salonId: booking.salonId, phone: customer.phone }
@@ -52,7 +48,7 @@ export const sendReminder = internalAction({
     await ctx.runAction(internal.whatsapp.send.sendTextMessage, {
       salonId: booking.salonId,
       recipientPhone: customer.phone,
-      text: `Hi ${customer.name}! Your ${service?.name ?? "appointment"} is in 1 hour (${booking.date} at ${booking.startTime}).\n\nCan you still make it? Reply YES to confirm, or NO if you need to reschedule.`,
+      text: `Hi ${customer.name}! Your ${service?.name ?? "appointment"} is in 1 hour (${booking.date} at ${booking.startTime}).\n\nCan you still make it? Reply YES to confirm, or NO if you need to cancel.`,
     });
   },
 });

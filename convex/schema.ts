@@ -103,17 +103,14 @@ export default defineSchema({
     startTime: v.string(),
     endTime: v.string(),
     status: v.union(
-      v.literal("pending_approval"),
+      v.literal("pending"),
       v.literal("confirmed"),
-      v.literal("reminder_sent"),
-      v.literal("customer_confirmed"),
       v.literal("completed"),
       v.literal("no_show"),
-      v.literal("cancelled_customer"),
-      v.literal("cancelled_admin"),
-      v.literal("rejected"),
-      v.literal("reschedule_pending")
+      v.literal("cancelled"),
+      v.literal("rejected")
     ),
+    cancelledBy: v.optional(v.union(v.literal("customer"), v.literal("admin"))),
     customerConfirmedAt: v.optional(v.number()),
     approvedBy: v.optional(v.string()),
     cancelledReason: v.optional(v.string()),
@@ -123,16 +120,8 @@ export default defineSchema({
     feedbackRequestedAt: v.optional(v.number()),
     googleEventId: v.optional(v.string()),
     reminderScheduledId: v.optional(v.id("_scheduled_functions")),
-    checkinScheduledId: v.optional(v.id("_scheduled_functions")),
+    statusCheckScheduledId: v.optional(v.id("_scheduled_functions")),
     createdBy: v.union(v.literal("customer"), v.literal("admin")),
-    // Reschedule tracking
-    previousDate: v.optional(v.string()),
-    previousStartTime: v.optional(v.string()),
-    previousEndTime: v.optional(v.string()),
-    previousStylistId: v.optional(v.id("stylists")),
-    rescheduleReason: v.optional(v.string()),
-    rescheduleRequestedAt: v.optional(v.number()),
-    customerPreferredTimes: v.optional(v.string()),
   })
     .index("by_salon_date", ["salonId", "date"])
     .index("by_salon_status", ["salonId", "status"])
@@ -148,16 +137,15 @@ export default defineSchema({
       v.literal("idle"),
       v.literal("collecting_info"),
       v.literal("booking_flow"),
-      v.literal("reschedule_flow"),
-      v.literal("cancel_flow"),
-      v.literal("awaiting_reminder_response"),
-      v.literal("awaiting_checkin_response"),
-      v.literal("admin_updating"),
-      v.literal("awaiting_reschedule_response")
+      v.literal("awaiting_reminder_response")
     ),
     flowData: v.optional(v.any()),
     lastMessageAt: v.number(),
-  }).index("by_salon_phone", ["salonId", "phone"]),
+    isProcessing: v.optional(v.boolean()),
+    processingStartedAt: v.optional(v.number()),
+  })
+    .index("by_salon_phone", ["salonId", "phone"])
+    .index("by_state_lastMessageAt", ["state", "lastMessageAt"]),
 
   messages: defineTable({
     salonId: v.id("salons"),
@@ -178,4 +166,23 @@ export default defineSchema({
   })
     .index("by_customer", ["customerId"])
     .index("by_salon_date", ["salonId", "date"]),
+
+  notifications: defineTable({
+    salonId: v.id("salons"),
+    type: v.union(
+      v.literal("pending_booking"),
+      v.literal("status_check"),
+      v.literal("customer_cancelled"),
+      v.literal("weekly_summary")
+    ),
+    title: v.string(),
+    body: v.string(),
+    bookingId: v.optional(v.id("bookings")),
+    read: v.boolean(),
+    actedOn: v.boolean(),
+    createdAt: v.number(),
+  })
+    .index("by_salon", ["salonId"])
+    .index("by_salon_read", ["salonId", "read"])
+    .index("by_salon_createdAt", ["salonId", "createdAt"]),
 });

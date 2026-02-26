@@ -88,8 +88,7 @@ export const notifyRejectionWithAlternatives = internalAction({
           );
           const activeBookings = existingBookings.filter(
             (b: Record<string, unknown>) =>
-              b.status !== "cancelled_customer" &&
-              b.status !== "cancelled_admin" &&
+              b.status !== "cancelled" &&
               b.status !== "no_show" &&
               b.status !== "rejected"
           );
@@ -157,7 +156,7 @@ export const notifyRejectionWithAlternatives = internalAction({
       text,
     });
 
-    // Set customer conversation to reschedule flow
+    // Set customer conversation to booking flow so they can rebook
     const conversation = await ctx.runQuery(
       internal.conversations.internal.getBySalonPhone,
       { salonId: args.salonId, phone: customer.phone }
@@ -165,13 +164,7 @@ export const notifyRejectionWithAlternatives = internalAction({
     if (conversation) {
       await ctx.runMutation(internal.conversations.internal.updateState, {
         conversationId: conversation._id,
-        state: "reschedule_flow",
-        flowData: {
-          originalServiceId: booking.serviceId,
-          originalDate: booking.date,
-          originalStartTime: booking.startTime,
-          customerId: booking.customerId,
-        },
+        state: "booking_flow",
       });
     }
   },

@@ -19,13 +19,7 @@ export interface EnrichedBooking {
   serviceDurationMinutes: number;
   preferredStylistName?: string;
   feedbackRequestedAt?: number;
-  previousDate?: string;
-  previousStartTime?: string;
-  previousEndTime?: string;
-  previousStylistId?: string;
-  rescheduleReason?: string;
-  rescheduleRequestedAt?: number;
-  customerPreferredTimes?: string;
+  cancelledBy?: "customer" | "admin";
 }
 
 export function enrichBookings(
@@ -58,13 +52,7 @@ export function enrichBookings(
       serviceDurationMinutes: serviceMap.get(b.serviceId)?.durationMinutes ?? 30,
       preferredStylistName: raw.preferredStylistName as string | undefined,
       feedbackRequestedAt: raw.feedbackRequestedAt as number | undefined,
-      previousDate: raw.previousDate as string | undefined,
-      previousStartTime: raw.previousStartTime as string | undefined,
-      previousEndTime: raw.previousEndTime as string | undefined,
-      previousStylistId: raw.previousStylistId as string | undefined,
-      rescheduleReason: raw.rescheduleReason as string | undefined,
-      rescheduleRequestedAt: raw.rescheduleRequestedAt as number | undefined,
-      customerPreferredTimes: raw.customerPreferredTimes as string | undefined,
+      cancelledBy: raw.cancelledBy as "customer" | "admin" | undefined,
     };
   });
 }
