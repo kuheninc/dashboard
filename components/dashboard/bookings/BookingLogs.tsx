@@ -158,7 +158,12 @@ function MiniCalendar({
   );
 }
 
-export default function BookingLogs() {
+interface BookingLogsProps {
+  stylistFilter?: string;
+  serviceFilter?: string;
+}
+
+export default function BookingLogs({ stylistFilter = "all", serviceFilter = "all" }: BookingLogsProps) {
   const { salonId, customers, services, stylists } = useDashboard();
 
   const now = new Date();
@@ -233,6 +238,11 @@ export default function BookingLogs() {
         return b.status === "cancelled";
       }
       return b.status === statusFilter;
+    })
+    .filter((b) => {
+      if (stylistFilter !== "all" && b.stylistId !== stylistFilter) return false;
+      if (serviceFilter !== "all" && b.serviceId !== serviceFilter) return false;
+      return true;
     })
     .filter((b) => {
       if (!search) return true;

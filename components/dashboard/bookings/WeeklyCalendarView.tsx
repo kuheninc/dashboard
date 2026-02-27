@@ -42,7 +42,11 @@ function minutesToTimeStr(minutes: number): string {
   return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
 }
 
-export default function WeeklyCalendarView() {
+interface WeeklyCalendarViewProps {
+  onOpenDetail?: (booking: EnrichedBooking) => void;
+}
+
+export default function WeeklyCalendarView({ onOpenDetail }: WeeklyCalendarViewProps) {
   const { salonId, salon, customers, services, stylists } = useDashboard();
 
   const [currentWeekStart, setCurrentWeekStart] = useState(() =>
@@ -216,6 +220,10 @@ export default function WeeklyCalendarView() {
           )}
           anchorRect={popover.rect}
           onClose={() => setPopover(null)}
+          onOpenDetail={onOpenDetail ? () => {
+            setPopover(null);
+            onOpenDetail(popover.booking);
+          } : undefined}
         />
       )}
 

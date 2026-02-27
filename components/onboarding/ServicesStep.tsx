@@ -1,7 +1,7 @@
 "use client";
 
 import { OnboardingFormData, ServiceEntry } from "@/lib/types";
-import { X } from "lucide-react";
+import { X, Sparkles } from "lucide-react";
 
 interface Props {
   data: OnboardingFormData;
@@ -9,6 +9,14 @@ interface Props {
 }
 
 const DURATION_OPTIONS = [15, 30, 45, 60, 90, 120, 150, 180];
+
+const COMMON_SERVICES: ServiceEntry[] = [
+  { name: "Haircut", nameBM: "Potong Rambut", durationMinutes: 30, priceRM: 30 },
+  { name: "Hair Wash & Blow Dry", nameBM: "Cuci & Blow", durationMinutes: 30, priceRM: 25 },
+  { name: "Hair Coloring", nameBM: "Pewarnaan Rambut", durationMinutes: 120, priceRM: 150 },
+  { name: "Hair Treatment", nameBM: "Rawatan Rambut", durationMinutes: 60, priceRM: 80 },
+  { name: "Perming", nameBM: "Perming", durationMinutes: 150, priceRM: 200 },
+];
 
 export default function ServicesStep({ data, onChange }: Props) {
   const updateService = (
@@ -40,8 +48,30 @@ export default function ServicesStep({ data, onChange }: Props) {
     });
   };
 
+  const isDefaultEmpty =
+    data.services.length === 1 &&
+    !data.services[0].name &&
+    !data.services[0].nameBM &&
+    data.services[0].priceRM === 0;
+
+  const loadCommonServices = () => {
+    onChange({ ...data, services: COMMON_SERVICES.map((s) => ({ ...s })) });
+  };
+
   return (
     <div className="space-y-5">
+      {/* Smart defaults */}
+      {isDefaultEmpty && (
+        <button
+          type="button"
+          onClick={loadCommonServices}
+          className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-dashed border-primary/30 bg-[rgba(166,139,107,0.04)] text-[13px] font-medium text-primary hover:bg-[rgba(166,139,107,0.08)] transition-colors"
+        >
+          <Sparkles className="w-4 h-4" />
+          Start with common salon services
+        </button>
+      )}
+
       {data.services.map((service, index) => (
         <div
           key={index}

@@ -83,6 +83,9 @@ export default function StylistsStep({ data, onChange }: Props) {
 
   return (
     <div className="space-y-5">
+      <p className="text-[13px] text-muted-foreground -mt-1">
+        Their availability will be used to auto-assign stylists when customers book via WhatsApp.
+      </p>
       {data.stylists.map((stylist, sIndex) => (
         <div
           key={sIndex}

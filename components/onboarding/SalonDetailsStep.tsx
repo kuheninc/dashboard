@@ -102,7 +102,9 @@ export default function SalonDetailsStep({ data, onChange }: Props) {
           WhatsApp Business API
         </h3>
         <p className="text-[13px] text-muted-foreground mb-4">
-          These come from your Meta Business dashboard. Leave as placeholder values for testing.
+          Find these in your{" "}
+          <span className="font-medium text-foreground">Meta Business Dashboard</span>
+          {" "}&rarr; WhatsApp &rarr; API Setup. Leave as placeholder values for testing.
         </p>
 
         <div className="space-y-4">

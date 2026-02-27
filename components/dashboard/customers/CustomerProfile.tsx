@@ -8,7 +8,7 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import type { Doc, Id } from "@/convex/_generated/dataModel";
 import Modal from "@/components/dashboard/Modal";
-import { User, Phone, Mail, Calendar, AlertTriangle, Pencil, Shield, ShieldOff } from "lucide-react";
+import { User, Phone, Mail, Calendar, AlertTriangle, Pencil, Shield, ShieldOff, MessageSquare, StickyNote } from "lucide-react";
 
 interface CustomerProfileProps {
   customerId: Id<"customers"> | null;
@@ -19,7 +19,9 @@ interface CustomerProfileProps {
 
 export default function CustomerProfile({ customerId, customers, services, stylists }: CustomerProfileProps) {
   const [editing, setEditing] = useState(false);
+  const [addingNote, setAddingNote] = useState(false);
   const toggleBlacklist = useMutation(api.customers.mutations.toggleBlacklist);
+  const updateCustomer = useMutation(api.customers.mutations.update);
 
   const rawBookings = useQuery(
     api.bookings.queries.getByCustomer,
@@ -89,11 +91,20 @@ export default function CustomerProfile({ customerId, customers, services, styli
 
         {/* Content */}
         <div className="px-5 py-4 space-y-5">
-          {/* Contact info */}
+          {/* Contact info + WhatsApp button */}
           <div className="space-y-2.5">
             <div className="flex items-center gap-2.5 text-muted-foreground">
               <Phone className="w-3.5 h-3.5 text-[#9c9184]" />
               <span className="font-mono text-[13px]">+{customer.phone}</span>
+              <a
+                href={`https://wa.me/${customer.phone}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="ml-auto inline-flex items-center gap-1 text-[11px] font-medium text-[#5a9a6e] hover:underline px-2 py-1 rounded-md bg-[rgba(90,154,110,0.06)] hover:bg-[rgba(90,154,110,0.12)] transition-colors"
+              >
+                <MessageSquare className="w-3 h-3" />
+                WhatsApp
+              </a>
             </div>
             {customer.email && (
               <div className="flex items-center gap-2.5 text-muted-foreground">
@@ -132,42 +143,90 @@ export default function CustomerProfile({ customerId, customers, services, styli
             </div>
           </div>
 
+          {/* Notes (prominent) */}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <p className="font-label text-[#9c9184] flex items-center gap-1.5">
+                <StickyNote className="w-3 h-3" />
+                Notes
+              </p>
+              {!customer.notes && !addingNote && (
+                <button
+                  onClick={() => setAddingNote(true)}
+                  className="text-[11px] font-medium text-primary hover:underline"
+                >
+                  + Add note
+                </button>
+              )}
+            </div>
+            {customer.notes ? (
+              <div className="p-3 bg-[rgba(196,152,62,0.05)] border border-[rgba(196,152,62,0.12)] rounded-lg">
+                <p className="text-[13px] text-foreground leading-relaxed">{customer.notes}</p>
+                <button
+                  onClick={() => setEditing(true)}
+                  className="text-[11px] font-medium text-primary hover:underline mt-1.5"
+                >
+                  Edit
+                </button>
+              </div>
+            ) : addingNote ? (
+              <InlineNoteEditor
+                customerId={customer._id}
+                onClose={() => setAddingNote(false)}
+              />
+            ) : (
+              <p className="text-[12px] text-muted-foreground italic">No notes yet</p>
+            )}
+          </div>
+
           {/* No-show warning */}
           {customer.noShowCount >= 2 && (
             <div className="flex items-start gap-2.5 p-3 bg-[rgba(196,152,62,0.08)] border border-[rgba(196,152,62,0.15)] rounded-lg">
               <AlertTriangle className="w-4 h-4 text-[#c4983e] mt-0.5 shrink-0" />
-              <div>
-                <p className="text-[13px] font-medium text-[#c4983e]">
-                  {customer.noShowCount} no-shows recorded
-                </p>
-                {customer.notes && (
-                  <p className="text-[12px] text-[#c4983e] opacity-80 mt-0.5">{customer.notes}</p>
-                )}
-              </div>
+              <p className="text-[13px] font-medium text-[#c4983e]">
+                {customer.noShowCount} no-shows recorded
+              </p>
             </div>
           )}
 
-          {/* Booking history */}
+          {/* Booking timeline */}
           <div>
-            <p className="font-label text-[#9c9184] mb-3">Recent Bookings</p>
-            <div className="space-y-2">
+            <p className="font-label text-[#9c9184] mb-3">Booking History</p>
+            <div className="space-y-0 max-h-[320px] overflow-y-auto">
               {rawBookings === undefined ? (
                 <p className="text-[13px] text-muted-foreground text-center py-4">Loading...</p>
               ) : bookings.length === 0 ? (
                 <p className="text-[13px] text-muted-foreground text-center py-4">No bookings yet</p>
               ) : (
-                bookings.slice(0, 6).map((b) => (
-                  <div
-                    key={b._id}
-                    className="flex items-center justify-between py-2.5 px-3 rounded-lg bg-[rgba(166,139,107,0.05)]"
-                  >
-                    <div>
-                      <p className="text-[13px] font-medium text-foreground">{b.serviceName}</p>
+                bookings.map((b, i) => (
+                  <div key={b._id} className="flex gap-3">
+                    {/* Timeline line + dot */}
+                    <div className="flex flex-col items-center flex-shrink-0">
+                      <div
+                        className={`w-2 h-2 rounded-full mt-2 ${
+                          b.status === "completed"
+                            ? "bg-[#5a9a6e]"
+                            : b.status === "no_show"
+                              ? "bg-[#c45a5a]"
+                              : b.status === "cancelled" || b.status === "rejected"
+                                ? "bg-[#9c9184]"
+                                : "bg-primary"
+                        }`}
+                      />
+                      {i < bookings.length - 1 && (
+                        <div className="w-px flex-1 bg-border min-h-[24px]" />
+                      )}
+                    </div>
+                    {/* Content */}
+                    <div className="pb-3 flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-[13px] font-medium text-foreground truncate">{b.serviceName}</p>
+                        <BookingStatusBadge status={b.status as BookingStatus} />
+                      </div>
                       <p className="text-[11px] text-[#9c9184] mt-0.5">
                         <span className="font-data">{b.date}</span> &middot; <span className="font-data">{b.startTime}</span> &middot; {b.stylistName}
                       </p>
                     </div>
-                    <BookingStatusBadge status={b.status as BookingStatus} />
                   </div>
                 ))
               )}
@@ -180,6 +239,48 @@ export default function CustomerProfile({ customerId, customers, services, styli
         <CustomerEditModal customer={customer} onClose={() => setEditing(false)} />
       )}
     </>
+  );
+}
+
+function InlineNoteEditor({ customerId, onClose }: { customerId: Id<"customers">; onClose: () => void }) {
+  const updateCustomer = useMutation(api.customers.mutations.update);
+  const [note, setNote] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async () => {
+    if (!note.trim()) { onClose(); return; }
+    setSaving(true);
+    await updateCustomer({ customerId, notes: note.trim() });
+    setSaving(false);
+    onClose();
+  };
+
+  return (
+    <div className="space-y-2">
+      <textarea
+        value={note}
+        onChange={(e) => setNote(e.target.value)}
+        rows={2}
+        className="w-full bg-background border border-border rounded-lg px-3 py-2 text-[13px] text-foreground outline-none focus:ring-1 focus:ring-primary/30 resize-none"
+        placeholder="e.g. Prefers stylist Amy, allergic to certain products..."
+        autoFocus
+      />
+      <div className="flex gap-2">
+        <button
+          onClick={onClose}
+          className="text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors"
+        >
+          Cancel
+        </button>
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="text-[11px] font-medium text-primary hover:underline disabled:opacity-50"
+        >
+          {saving ? "Saving..." : "Save"}
+        </button>
+      </div>
+    </div>
   );
 }
 

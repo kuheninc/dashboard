@@ -7,8 +7,8 @@ import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import BookingStatusBadge from "@/components/dashboard/BookingStatusBadge";
 import { useDashboard } from "@/lib/dashboard-context";
-import { enrichBookings } from "@/lib/dashboard-helpers";
-import { Search, Filter, MoreHorizontal, Check, X, AlertTriangle, CheckCircle2, Star, ArrowUpDown } from "lucide-react";
+import { enrichBookings, type EnrichedBooking } from "@/lib/dashboard-helpers";
+import { Search, Filter, MoreHorizontal, Check, X, AlertTriangle, CheckCircle2, Star, ArrowUpDown, ExternalLink } from "lucide-react";
 
 type BookingStatus =
   | "pending"
@@ -88,10 +88,12 @@ function ActionsDropdown({
   bookingId,
   status,
   feedbackRequestedAt,
+  onViewDetails,
 }: {
   bookingId: Id<"bookings">;
   status: BookingStatus;
   feedbackRequestedAt?: number;
+  onViewDetails?: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -132,10 +134,17 @@ function ActionsDropdown({
     };
   }, [open, updatePos]);
 
-  // Terminal statuses with no actions (except completed which can have feedback)
-  if (TERMINAL_STATUSES.includes(status) && status !== "completed") return null;
-
   const actions: { label: string; icon: React.ReactNode; onClick: () => void; color?: string; disabled?: boolean }[] = [];
+
+  // Always add "View Details" first
+  if (onViewDetails) {
+    actions.push({
+      label: "View Details",
+      icon: <ExternalLink className="w-3.5 h-3.5" />,
+      onClick: () => { onViewDetails(); setOpen(false); },
+      color: "#6b6058",
+    });
+  }
 
   if (status === "pending") {
     actions.push({
@@ -176,7 +185,7 @@ function ActionsDropdown({
         color: "#c4983e",
       });
     }
-  } else {
+  } else if (!TERMINAL_STATUSES.includes(status)) {
     actions.push({
       label: "Mark Completed",
       icon: <CheckCircle2 className="w-3.5 h-3.5" />,
@@ -196,6 +205,8 @@ function ActionsDropdown({
       color: "#c45a5a",
     });
   }
+
+  if (actions.length === 0) return null;
 
   const dropdown = open && pos && !errorMsg ? createPortal(
     <div
@@ -250,7 +261,13 @@ function ActionsDropdown({
   );
 }
 
-export default function BookingTable() {
+interface BookingTableProps {
+  stylistFilter?: string;
+  serviceFilter?: string;
+  onOpenDetail?: (booking: EnrichedBooking) => void;
+}
+
+export default function BookingTable({ stylistFilter = "all", serviceFilter = "all", onOpenDetail }: BookingTableProps) {
   const { salonId, customers, services, stylists } = useDashboard();
   const { startDate, endDate } = useMemo(() => getDateRange(), []);
   const todayStr = useMemo(() => {
@@ -283,6 +300,8 @@ export default function BookingTable() {
   const filtered = enriched
     .filter((b) => {
       if (statusFilter !== "all" && b.status !== statusFilter) return false;
+      if (stylistFilter !== "all" && b.stylistId !== stylistFilter) return false;
+      if (serviceFilter !== "all" && b.serviceId !== serviceFilter) return false;
       if (search) {
         const term = search.toLowerCase();
         return (
@@ -417,7 +436,8 @@ export default function BookingTable() {
                         {dayBookings.map((booking) => (
                           <tr
                             key={booking._id}
-                            className="border-t border-border hover:bg-[rgba(166,139,107,0.05)] transition-colors"
+                            className="border-t border-border hover:bg-[rgba(166,139,107,0.05)] transition-colors cursor-pointer"
+                            onClick={() => onOpenDetail?.(booking)}
                           >
                             <td className="text-[13px] px-4 lg:px-5 py-3 whitespace-nowrap">
                               <span className="font-medium text-foreground font-data">
@@ -452,11 +472,12 @@ export default function BookingTable() {
                             <td className="text-[13px] px-4 lg:px-5 py-3">
                               <BookingStatusBadge status={booking.status} />
                             </td>
-                            <td className="px-2 py-3">
+                            <td className="px-2 py-3" onClick={(e) => e.stopPropagation()}>
                               <ActionsDropdown
                                 bookingId={booking._id as Id<"bookings">}
                                 status={booking.status as BookingStatus}
                                 feedbackRequestedAt={booking.feedbackRequestedAt}
+                                onViewDetails={() => onOpenDetail?.(booking)}
                               />
                             </td>
                           </tr>

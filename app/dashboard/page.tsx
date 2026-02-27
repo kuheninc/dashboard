@@ -11,6 +11,7 @@ import ServicePopularityChart from "@/components/dashboard/charts/ServicePopular
 import TodaySchedule from "@/components/dashboard/bookings/TodaySchedule";
 import ActivityFeed from "@/components/dashboard/ActivityFeed";
 import PendingApprovals from "@/components/dashboard/bookings/PendingApprovals";
+import { SetupChecklist } from "@/components/dashboard/EmptyState";
 import { CalendarDays, DollarSign, UserPlus, AlertTriangle } from "lucide-react";
 
 export default function DashboardOverview() {
@@ -164,6 +165,13 @@ export default function DashboardOverview() {
           />
         </div>
       </div>
+
+      {/* Setup checklist for new salons */}
+      <SetupChecklist
+        serviceCount={services.length}
+        stylistCount={stylists.length}
+        customerCount={customers.length}
+      />
 
       {/* Pending approvals */}
       <PendingApprovals />

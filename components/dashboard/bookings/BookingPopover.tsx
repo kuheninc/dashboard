@@ -16,6 +16,7 @@ interface BookingPopoverProps {
   stylistColor: StylistColor;
   anchorRect: DOMRect;
   onClose: () => void;
+  onOpenDetail?: () => void;
 }
 
 export default function BookingPopover({
@@ -23,6 +24,7 @@ export default function BookingPopover({
   stylistColor,
   anchorRect,
   onClose,
+  onOpenDetail,
 }: BookingPopoverProps) {
   const ref = useRef<HTMLDivElement>(null);
 
@@ -167,6 +169,14 @@ export default function BookingPopover({
           </span>
         </p>
 
+        {onOpenDetail && (
+          <button
+            onClick={onOpenDetail}
+            className="text-[11px] font-medium text-primary hover:underline mt-1"
+          >
+            View full details &rarr;
+          </button>
+        )}
       </div>
 
       {/* Conflict error */}
